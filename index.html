@@ -288,14 +288,19 @@
         const db = firebase.firestore();
         const emp = employees.find(e => e.id === empId);
         const newLeaves = { ...emp.leaves, ...(editData[empId] || {}) };
-        await db.collection(`artifacts/${appId}/public/data/employees`).doc(empId).set({
-          ...emp, leaves: newLeaves
-        }, { merge: true });
-        setIsSaving(s => ({ ...s, [empId]: false }));
-        setMessage({ text: "Data cuti disimpan.", type: "success" });
+        try {
+          await db.collection(`artifacts/${appId}/public/data/employees`).doc(empId).set({
+            ...emp, leaves: newLeaves
+          }, { merge: true });
+          setMessage({ text: "Data cuti disimpan.", type: "success" });
+        } catch (error) {
+          console.error("Gagal menyimpan data cuti pegawai:", error);
+          setMessage({ text: "Gagal menyimpan data cuti. Coba lagi.", type: "error" });
+        } finally {
+          setIsSaving(s => ({ ...s, [empId]: false }));
+        }
       };
 
-      // Fungsi untuk menyimpan kuota cuti baru (menambahkan dokumen)
       const addQuota = async (newQuota) => {
         try {
           const db = firebase.firestore();
@@ -308,7 +313,6 @@
         }
       };
 
-      // Fungsi untuk memperbarui kuota cuti yang sudah ada
       const updateQuota = async (id, updatedFields) => {
         try {
           const db = firebase.firestore();
@@ -320,7 +324,6 @@
         }
       };
       
-      // Fungsi untuk menghapus kuota cuti
       const deleteQuota = async (id) => {
         if (!confirm("Hapus jenis cuti ini?")) return;
         try {
@@ -337,26 +340,41 @@
         const nm = (name||'').trim();
         if (!nm) return;
         const db = firebase.firestore();
-        await db.collection(`artifacts/${appId}/public/data/employees`).add({
-          name: nm,
-          leaves: { annual:0, long:0, sick:0, maternity:0, important:0, outside:0 }
-        });
-        setMessage({ text: "Pegawai ditambahkan.", type: "success" });
+        try {
+          await db.collection(`artifacts/${appId}/public/data/employees`).add({
+            name: nm,
+            leaves: { annual:0, long:0, sick:0, maternity:0, important:0, outside:0 }
+          });
+          setMessage({ text: "Pegawai ditambahkan.", type: "success" });
+        } catch (error) {
+          console.error("Gagal menambahkan pegawai:", error);
+          setMessage({ text: "Gagal menambahkan pegawai. Coba lagi.", type: "error" });
+        }
       };
 
       const deleteEmployee = async (emp) => {
         if (!confirm(`Hapus pegawai: ${emp.name}?`)) return;
         const db = firebase.firestore();
-        await db.collection(`artifacts/${appId}/public/data/employees`).doc(emp.id).delete();
-        setMessage({ text: "Pegawai dihapus.", type: "success" });
+        try {
+          await db.collection(`artifacts/${appId}/public/data/employees`).doc(emp.id).delete();
+          setMessage({ text: "Pegawai dihapus.", type: "success" });
+        } catch (error) {
+          console.error("Gagal menghapus pegawai:", error);
+          setMessage({ text: "Gagal menghapus pegawai. Coba lagi.", type: "error" });
+        }
       };
 
       const updateName = async (empId, newName) => {
         const nm = (newName||'').trim();
         if (!nm) return;
         const db = firebase.firestore();
-        await db.collection(`artifacts/${appId}/public/data/employees`).doc(empId).set({ name: nm }, { merge: true });
-        setMessage({ text: "Nama diperbarui.", type: "success" });
+        try {
+          await db.collection(`artifacts/${appId}/public/data/employees`).doc(empId).set({ name: nm }, { merge: true });
+          setMessage({ text: "Nama diperbarui.", type: "success" });
+        } catch (error) {
+          console.error("Gagal memperbarui nama:", error);
+          setMessage({ text: "Gagal memperbarui nama. Coba lagi.", type: "error" });
+        }
       };
 
       // UI
@@ -416,12 +434,15 @@
       const [editingName, setEditingName] = useState('');
       const [newQuotaType, setNewQuotaType] = useState('');
       const [newQuotaValue, setNewQuotaValue] = useState('');
+      const [isAddingQuota, setIsAddingQuota] = useState(false);
+      const [savingQuota, setSavingQuota] = useState({});
 
       useEffect(() => { lucide.createIcons(); });
       
       const handleAddQuota = async (e) => {
         e.preventDefault();
         if (newQuotaType && newQuotaValue) {
+          setIsAddingQuota(true);
           const newOrder = leaveQuotas.length > 0 ? Math.max(...leaveQuotas.map(q => q.order || 0)) + 1 : 1;
           const newQuota = {
             type: newQuotaType,
@@ -431,16 +452,20 @@
           await addQuota(newQuota);
           setNewQuotaType('');
           setNewQuotaValue('');
+          setIsAddingQuota(false);
         }
       };
       
-      const handleQuotaChange = (id, newQuotaValue) => {
-        setLeaveQuotas(prev => prev.map(q => q.id === id ? { ...q, quota: newQuotaValue } : q));
-        updateQuota(id, { quota: newQuotaValue });
+      const handleQuotaChange = async (id, newQuotaValue) => {
+        setSavingQuota(prev => ({ ...prev, [id]: true }));
+        await updateQuota(id, { quota: newQuotaValue });
+        setSavingQuota(prev => ({ ...prev, [id]: false }));
       };
 
-      const handleQuotaDelete = (id) => {
-          deleteQuota(id);
+      const handleQuotaDelete = async (id) => {
+          setSavingQuota(prev => ({ ...prev, [id]: true }));
+          await deleteQuota(id);
+          setSavingQuota(prev => ({ ...prev, [id]: false }));
       };
 
       return (
@@ -474,7 +499,9 @@
                 <input id="newQuotaValue" type="text" value={newQuotaValue} onChange={e => setNewQuotaValue(e.target.value)} placeholder="Misal: 5 hari"
                   className="w-full p-2 border border-gray-300 rounded-lg focus:border-yellow-500 focus:outline-none" />
               </div>
-              <button type="submit" className="px-6 py-2 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 shadow w-full md:w-auto">Tambah</button>
+              <button type="submit" disabled={isAddingQuota} className={`px-6 py-2 rounded-lg font-bold shadow w-full md:w-auto ${isAddingQuota ? 'bg-gray-400' : 'bg-green-500 text-white hover:bg-green-600'}`}>
+                {isAddingQuota ? 'Menambah...' : 'Tambah'}
+              </button>
             </form>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
@@ -482,15 +509,20 @@
                 <div key={quota.id} className="flex flex-col p-3 bg-gray-100 rounded-lg shadow-sm">
                   <div className="flex justify-between items-center mb-1">
                     <label className="text-sm font-semibold text-gray-600">{quota.type}</label>
-                    <button onClick={() => handleQuotaDelete(quota.id)} className="p-1 rounded-full text-red-500 hover:bg-red-100">
+                    <button onClick={() => handleQuotaDelete(quota.id)} disabled={savingQuota[quota.id]} className={`p-1 rounded-full text-red-500 ${savingQuota[quota.id] ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-100'}`}>
                        <i data-lucide="trash-2" className="w-4 h-4"></i>
                     </button>
                   </div>
-                  <input type="text"
-                    value={ quota.quota }
-                    onChange={e => handleQuotaChange(quota.id, e.target.value)}
-                    className="w-full p-2 border border-gray-300 rounded-lg focus:border-yellow-500 focus:outline-none"
-                  />
+                  <div className="relative">
+                    <input type="text"
+                      value={ quota.quota }
+                      onChange={e => handleQuotaChange(quota.id, e.target.value)}
+                      className="w-full p-2 border border-gray-300 rounded-lg focus:border-yellow-500 focus:outline-none"
+                    />
+                    {savingQuota[quota.id] && (
+                      <span className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-gray-500 font-semibold">Menyimpan...</span>
+                    )}
+                  </div>
                   {quota.note && <p className="text-xs italic text-red-500 mt-1">{quota.note}</p>}
                 </div>
               ))}
