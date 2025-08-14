@@ -413,11 +413,18 @@
             const text = await response.text();
             const leaveData = parseCSV(text);
             const currentLeaves = leaveData.filter(leave => {
-              const startDate = new Date(leave['Tanggal Mulai Cuti']);
-              const endDate = new Date(leave['Tanggal Selesai Cuti']);
-              startDate.setHours(0, 0, 0, 0);
-              endDate.setHours(0, 0, 0, 0);
-              return today >= startDate && today <= endDate;
+              // --- Perbaikan pada bagian ini ---
+              const startDateParts = leave['Tanggal Mulai Cuti'].split('/');
+              const endDateParts = leave['Tanggal Selesai Cuti'].split('/');
+              
+              if (startDateParts.length === 3 && endDateParts.length === 3) {
+                const startDate = new Date(startDateParts[2], startDateParts[1] - 1, startDateParts[0]);
+                const endDate = new Date(endDateParts[2], endDateParts[1] - 1, endDateParts[0]);
+                startDate.setHours(0, 0, 0, 0);
+                endDate.setHours(0, 0, 0, 0);
+                return today >= startDate && today <= endDate;
+              }
+              return false; // Kembali false jika format tanggal tidak valid
             });
             setTodayLeaves(currentLeaves);
           } catch (error) {
