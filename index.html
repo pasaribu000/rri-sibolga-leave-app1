@@ -335,7 +335,7 @@
               {showPasswordInput && (
                 <form onSubmit={submitPassword} className="flex gap-2">
                   <input type="password" value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} placeholder="Kata sandi admin"
-                         className="p-2 border-2 border-gray-300 rounded-full focus:border-indigo-500 focus:outline-none" />
+                      className="p-2 border-2 border-gray-300 rounded-full focus:border-indigo-500 focus:outline-none" />
                   <button type="submit" className="px-4 py-2 bg-green-500 text-white rounded-full font-semibold hover:bg-green-600">Masuk</button>
                 </form>
               )}
@@ -348,8 +348,8 @@
                         updateName={updateName} isSaving={isSaving} />
           ) : (
             <UserPanel employees={employees} selectedEmployee={selectedEmployee} setSelectedEmployee={setSelectedEmployee}
-                       leaveTypes={leaveTypes} searchQuery={searchQuery} setSearchQuery={setSearchQuery}
-                       showFlow={showFlow} setShowFlow={setShowFlow} showCalendar={showCalendar} setShowCalendar={setShowCalendar} />
+                        leaveTypes={leaveTypes} searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+                        showFlow={showFlow} setShowFlow={setShowFlow} showCalendar={showCalendar} setShowCalendar={setShowCalendar} />
           )}
         </div>
       );
@@ -370,7 +370,7 @@
             </h2>
             <form onSubmit={(e)=>{e.preventDefault(); addEmployee(newName); setNewName('');}} className="flex flex-col md:flex-row gap-3">
               <input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Nama Lengkap Pegawai…"
-                     className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:ring focus:ring-green-200 focus:outline-none" />
+                      className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:ring focus:ring-green-200 focus:outline-none" />
               <button type="submit" className="px-6 py-3 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 shadow">Tambah</button>
             </form>
           </div>
@@ -381,7 +381,7 @@
                 {editing === emp.id ? (
                   <div className="flex items-center gap-2">
                     <input value={editingName} onChange={e=>setEditingName(e.target.value)}
-                           className="w-full p-2 border border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none" />
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none" />
                     <button onClick={()=>{updateName(emp.id, editingName); setEditing(null); setEditingName('');}} className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
                       <i data-lucide="check" className="w-4 h-4"></i>
                     </button>
@@ -511,7 +511,7 @@
                     <div className="space-y-2">
                       {filtered.map(emp => (
                         <button key={emp.id} onClick={()=>setSelectedEmployee(emp)}
-                                className={`w-full text-left p-3 rounded-lg transition ${selectedEmployee?.id===emp.id?'bg-indigo-200 text-indigo-800 ring-2 ring-indigo-500':'bg-white hover:bg-gray-200 text-gray-800'}`}>
+                                 className={`w-full text-left p-3 rounded-lg transition ${selectedEmployee?.id===emp.id?'bg-indigo-200 text-indigo-800 ring-2 ring-indigo-500':'bg-white hover:bg-gray-200 text-gray-800'}`}>
                           {emp.name}
                         </button>
                       ))}
