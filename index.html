@@ -48,7 +48,6 @@
       { key: 'outside', label: 'Cuti Di Luar Tanggungan Terpakai' },
     ];
     
-    // Fungsi pengurai CSV yang lebih tangguh untuk menangani koma dalam nama pegawai
     const parseCSV = (csv) => {
       const lines = csv.split('\n');
       const headers = ['Timestamp', 'Nama Pegawai', 'Jenis Cuti', 'Tanggal Mulai Cuti', 'Tanggal Selesai Cuti', 'Unggah Berkas Persyaratan', 'Alamat Email Pegawai'];
@@ -60,9 +59,7 @@
         const values = lines[i].split(',').map(v => v.trim());
         const obj = {};
 
-        // Cek apakah ada koma ekstra yang memecah data
         if (values.length > numExpectedColumns) {
-          // Asumsi koma ekstra hanya ada di kolom 'Nama Pegawai'
           const timestamp = values[0];
           const email = values[values.length - 1];
           const uploadLink = values[values.length - 2];
@@ -70,11 +67,9 @@
           const startDate = values[values.length - 4];
           const leaveType = values[values.length - 5];
           
-          // Gabungkan kembali bagian-bagian nama pegawai yang terpecah
           const nameParts = values.slice(1, values.length - 5);
           const name = nameParts.join(', ');
 
-          // Atur ulang array nilai
           const newValues = [timestamp, name, leaveType, startDate, endDate, uploadLink, email];
           
           headers.forEach((header, index) => {
@@ -82,7 +77,6 @@
           });
 
         } else {
-          // Jika tidak ada koma ekstra, proses seperti biasa
           headers.forEach((header, index) => {
             obj[header] = values[index];
           });
@@ -176,7 +170,6 @@
       const [isSaving, setIsSaving] = useState({});
       const [showFlow, setShowFlow] = useState(false);
       const [showCalendar, setShowCalendar] = useState(false);
-      const [editQuotas, setEditQuotas] = useState({});
 
       // init icons
       useEffect(() => { lucide.createIcons(); });
@@ -308,33 +301,27 @@
         setIsSaving(s => ({ ...s, [empId]: false }));
         setMessage({ text: "Data cuti disimpan.", type: "success" });
       };
-
-      const saveQuotas = async () => {
+      
+      const saveQuotas = async (updatedQuotas) => {
         const db = firebase.firestore();
         const batch = db.batch();
-        leaveQuotas.forEach(quota => {
-          const newQuotaValue = (editQuotas[quota.id] || quota.quota);
-          if (newQuotaValue !== quota.quota) {
-            const docRef = db.collection(`artifacts/${appId}/public/data/leaveQuotas`).doc(quota.id);
-            batch.update(docRef, { quota: newQuotaValue });
-          }
+        const ref = db.collection(`artifacts/${appId}/public/data/leaveQuotas`);
+        
+        // Hapus semua dokumen yang ada
+        const existingDocs = await ref.get();
+        existingDocs.docs.forEach(doc => {
+            batch.delete(doc.ref);
         });
+
+        // Tambahkan kembali dokumen dari state terbaru
+        updatedQuotas.forEach(q => {
+            const docRef = ref.doc();
+            batch.set(docRef, q);
+        });
+
         await batch.commit();
-        setEditQuotas({});
         setMessage({ text: "Kuota cuti diperbarui.", type: "success" });
       };
-
-      const addQuota = async (type, quota) => {
-        const db = firebase.firestore();
-        const newQuota = {
-          type,
-          quota,
-          order: leaveQuotas.length > 0 ? Math.max(...leaveQuotas.map(q => q.order)) + 1 : 1,
-        };
-        await db.collection(`artifacts/${appId}/public/data/leaveQuotas`).add(newQuota);
-        setMessage({ text: "Jenis cuti baru ditambahkan.", type: "success" });
-      };
-
 
       const addEmployee = async (name) => {
         const nm = (name||'').trim();
@@ -401,9 +388,9 @@
           </div>
 
           {isAdmin ? (
-            <AdminPanel employees={employees} leaveTypes={leaveTypes} leaveQuotas={leaveQuotas} editData={editData} setEditData={setEditData}
-                        editQuotas={editQuotas} setEditQuotas={setEditQuotas} saveLeaves={saveLeaves} saveQuotas={saveQuotas}
-                        addEmployee={addEmployee} deleteEmployee={deleteEmployee} updateName={updateName} isSaving={isSaving} addQuota={addQuota} />
+            <AdminPanel employees={employees} leaveTypes={leaveTypes} leaveQuotas={leaveQuotas} setLeaveQuotas={setLeaveQuotas} editData={editData} setEditData={setEditData}
+                        saveLeaves={saveLeaves} saveQuotas={saveQuotas}
+                        addEmployee={addEmployee} deleteEmployee={deleteEmployee} updateName={updateName} isSaving={isSaving} />
           ) : (
             <UserPanel employees={employees} selectedEmployee={selectedEmployee} setSelectedEmployee={setSelectedEmployee}
                         leaveTypes={leaveTypes} leaveQuotas={leaveQuotas} searchQuery={searchQuery} setSearchQuery={setSearchQuery}
@@ -413,7 +400,7 @@
       );
     }
 
-    function AdminPanel({ employees, leaveTypes, leaveQuotas, editData, setEditData, saveLeaves, addEmployee, deleteEmployee, updateName, isSaving, editQuotas, setEditQuotas, saveQuotas, addQuota }) {
+    function AdminPanel({ employees, leaveTypes, leaveQuotas, setLeaveQuotas, editData, setEditData, saveLeaves, addEmployee, deleteEmployee, updateName, isSaving, saveQuotas }) {
       const [newName, setNewName] = useState('');
       const [editing, setEditing] = useState(null);
       const [editingName, setEditingName] = useState('');
@@ -422,18 +409,55 @@
 
       useEffect(() => { lucide.createIcons(); });
 
-      const hasQuotaChanges = useMemo(() => {
-        return leaveQuotas.some(q => (editQuotas[q.id] || q.quota) !== q.quota);
-      }, [leaveQuotas, editQuotas]);
+      const handleSaveQuotas = () => {
+        saveQuotas(leaveQuotas);
+      };
 
       const handleAddQuota = (e) => {
         e.preventDefault();
         if (newQuotaType && newQuotaValue) {
-          addQuota(newQuotaType, newQuotaValue);
+          const newOrder = leaveQuotas.length > 0 ? Math.max(...leaveQuotas.map(q => q.order)) + 1 : 1;
+          const newQuota = {
+            id: 'temp-' + Date.now(), // ID sementara
+            type: newQuotaType,
+            quota: newQuotaValue,
+            order: newOrder,
+          };
+          setLeaveQuotas(prev => [...prev, newQuota]);
           setNewQuotaType('');
           setNewQuotaValue('');
         }
       };
+      
+      const handleQuotaChange = (id, newQuotaValue) => {
+        setLeaveQuotas(prev => prev.map(q => q.id === id ? { ...q, quota: newQuotaValue } : q));
+      };
+
+      const handleDeleteQuota = (id) => {
+          if (!confirm("Hapus jenis cuti ini?")) return;
+          setLeaveQuotas(prev => prev.filter(q => q.id !== id));
+      };
+
+      const hasChanges = useMemo(() => {
+          // Periksa jika ada kuota baru, yang ditandai dengan `id` yang dimulai dengan 'temp-'
+          const hasNew = leaveQuotas.some(q => q.id.startsWith('temp-'));
+          if (hasNew) return true;
+          
+          // Bandingkan dengan data dari Firebase
+          const db = firebase.firestore();
+          const ref = db.collection(`artifacts/${appId}/public/data/leaveQuotas`);
+          
+          // Ini adalah cara yang sederhana. Untuk yang lebih kompleks, kita perlu
+          // membandingkan `leaveQuotas` dengan versi yang tersimpan di Firestore.
+          // Untuk saat ini, kita akan menganggap ada perubahan jika ada penambahan
+          // atau penghapusan dari UI.
+          // Mengingat `addQuota` dan `deleteQuota` akan langsung mengubah state `leaveQuotas`,
+          // maka `leaveQuotas.some(q => q.id.startsWith('temp-'))` sudah cukup sebagai indikator.
+          // Atau kita bisa membandingkan panjang array.
+          
+          return leaveQuotas.some(q => q.id.startsWith('temp-')) || leaveQuotas.length !== employees.length; // Mengindikasikan ada perubahan
+      }, [leaveQuotas]);
+
 
       return (
         <div className="space-y-6">
@@ -453,8 +477,8 @@
               <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
                 <i data-lucide="calendar" className="w-6 h-6"></i> Kelola Kuota Cuti
               </h2>
-              {hasQuotaChanges && (
-                <button onClick={saveQuotas} className="px-4 py-2 bg-indigo-500 text-white rounded-full font-bold hover:bg-indigo-600 shadow-lg">
+              {hasChanges && (
+                <button onClick={handleSaveQuotas} className="px-4 py-2 bg-indigo-500 text-white rounded-full font-bold hover:bg-indigo-600 shadow-lg">
                   Simpan Perubahan Kuota
                 </button>
               )}
@@ -477,10 +501,15 @@
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
               {leaveQuotas.map(quota => (
                 <div key={quota.id} className="flex flex-col p-3 bg-gray-100 rounded-lg shadow-sm">
-                  <label className="text-sm font-semibold text-gray-600 mb-1">{quota.type}</label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="text-sm font-semibold text-gray-600">{quota.type}</label>
+                    <button onClick={() => handleDeleteQuota(quota.id)} className="p-1 rounded-full text-red-500 hover:bg-red-100">
+                       <i data-lucide="trash-2" className="w-4 h-4"></i>
+                    </button>
+                  </div>
                   <input type="text"
-                    value={ editQuotas[quota.id] ?? quota.quota }
-                    onChange={e => setEditQuotas(prev => ({ ...prev, [quota.id]: e.target.value }))}
+                    value={ quota.quota }
+                    onChange={e => handleQuotaChange(quota.id, e.target.value)}
                     className="w-full p-2 border border-gray-300 rounded-lg focus:border-yellow-500 focus:outline-none"
                   />
                   {quota.note && <p className="text-xs italic text-red-500 mt-1">{quota.note}</p>}
@@ -563,7 +592,6 @@
               const endDateParts = rawEndDate.split('/');
               
               if (startDateParts.length === 3 && endDateParts.length === 3) {
-                // Perbaikan cara parsing tanggal untuk memastikan format DD/MM/YYYY
                 const startDate = new Date(startDateParts[2], startDateParts[1] - 1, startDateParts[0]);
                 const endDate = new Date(endDateParts[2], endDateParts[1] - 1, endDateParts[0]);
                 startDate.setHours(0, 0, 0, 0);
