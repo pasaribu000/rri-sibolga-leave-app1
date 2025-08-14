@@ -47,16 +47,6 @@
       { key: 'important', label: 'Cuti Alasan Penting Terpakai' },
       { key: 'outside', label: 'Cuti Di Luar Tanggungan Terpakai' },
     ];
-
-    const leaveQuotas = [
-      { type: 'Tahunan', quota: '12 hari' },
-      { type: 'Besar', quota: '3 bulan' },
-      { type: 'Sakit', quota: '14 hari' },
-      { type: 'Melahirkan', quota: '3 bulan' },
-      { type: 'Alasan Penting', quota: '1 bulan' },
-      { type: 'Di Luar Tanggungan', quota: '3 tahun' },
-      { type: 'Bersama', quota: '7 hari', note: 'sewaktu-waktu dapat berubah' },
-    ];
     
     // Fungsi pengurai CSV yang lebih tangguh untuk menangani koma dalam nama pegawai
     const parseCSV = (csv) => {
@@ -179,12 +169,14 @@
       const [adminPassword, setAdminPassword] = useState('');
       const [message, setMessage] = useState({ text: '', type: '' });
       const [employees, setEmployees] = useState([]);
+      const [leaveQuotas, setLeaveQuotas] = useState([]);
       const [selectedEmployee, setSelectedEmployee] = useState(null);
       const [searchQuery, setSearchQuery] = useState('');
       const [editData, setEditData] = useState({});
       const [isSaving, setIsSaving] = useState({});
       const [showFlow, setShowFlow] = useState(false);
       const [showCalendar, setShowCalendar] = useState(false);
+      const [editQuotas, setEditQuotas] = useState({});
 
       // init icons
       useEffect(() => { lucide.createIcons(); });
@@ -240,6 +232,45 @@
         return () => unsub();
       }, []);
 
+      // Firestore: subscribe leave quotas
+      useEffect(() => {
+        const db = firebase.firestore();
+        const ref = db.collection(`artifacts/${appId}/public/data/leaveQuotas`);
+
+        const initialQuotas = [
+          { type: 'Tahunan', quota: '12 hari', order: 1 },
+          { type: 'Besar', quota: '3 bulan', order: 2 },
+          { type: 'Sakit', quota: '14 hari', order: 3 },
+          { type: 'Melahirkan', quota: '3 bulan', order: 4 },
+          { type: 'Alasan Penting', quota: '1 bulan', order: 5 },
+          { type: 'Di Luar Tanggungan', quota: '3 tahun', order: 6 },
+          { type: 'Bersama', quota: '7 hari', note: 'sewaktu-waktu dapat berubah', order: 7 },
+        ];
+
+        const ensureSeed = async () => {
+          const snap = await ref.get();
+          if (snap.empty) {
+            const batch = db.batch();
+            initialQuotas.forEach(q => {
+              const docRef = ref.doc();
+              batch.set(docRef, q);
+            });
+            await batch.commit();
+          }
+        };
+
+        ensureSeed().catch(console.error);
+
+        const unsub = ref.orderBy('order').onSnapshot(snap => {
+          const arr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          setLeaveQuotas(arr);
+        }, err => {
+          console.error(err);
+          setMessage({ text: "Gagal memuat kuota cuti.", type: "error" });
+        });
+        return () => unsub();
+      }, []);
+
       const filtered = React.useMemo(
         () => employees.filter(e => e.name.toLowerCase().includes((searchQuery||'').toLowerCase())),
         [employees, searchQuery]
@@ -276,6 +307,21 @@
         }, { merge: true });
         setIsSaving(s => ({ ...s, [empId]: false }));
         setMessage({ text: "Data cuti disimpan.", type: "success" });
+      };
+
+      const saveQuotas = async () => {
+        const db = firebase.firestore();
+        const batch = db.batch();
+        leaveQuotas.forEach(quota => {
+          const newQuotaValue = (editQuotas[quota.id] || quota.quota);
+          if (newQuotaValue !== quota.quota) {
+            const docRef = db.collection(`artifacts/${appId}/public/data/leaveQuotas`).doc(quota.id);
+            batch.update(docRef, { quota: newQuotaValue });
+          }
+        });
+        await batch.commit();
+        setEditQuotas({});
+        setMessage({ text: "Kuota cuti diperbarui.", type: "success" });
       };
 
       const addEmployee = async (name) => {
@@ -343,24 +389,28 @@
           </div>
 
           {isAdmin ? (
-            <AdminPanel employees={employees} leaveTypes={leaveTypes} editData={editData} setEditData={setEditData}
-                        saveLeaves={saveLeaves} addEmployee={addEmployee} deleteEmployee={deleteEmployee}
-                        updateName={updateName} isSaving={isSaving} />
+            <AdminPanel employees={employees} leaveTypes={leaveTypes} leaveQuotas={leaveQuotas} editData={editData} setEditData={setEditData}
+                        editQuotas={editQuotas} setEditQuotas={setEditQuotas} saveLeaves={saveLeaves} saveQuotas={saveQuotas}
+                        addEmployee={addEmployee} deleteEmployee={deleteEmployee} updateName={updateName} isSaving={isSaving} />
           ) : (
             <UserPanel employees={employees} selectedEmployee={selectedEmployee} setSelectedEmployee={setSelectedEmployee}
-                        leaveTypes={leaveTypes} searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+                        leaveTypes={leaveTypes} leaveQuotas={leaveQuotas} searchQuery={searchQuery} setSearchQuery={setSearchQuery}
                         showFlow={showFlow} setShowFlow={setShowFlow} showCalendar={showCalendar} setShowCalendar={setShowCalendar} />
           )}
         </div>
       );
     }
 
-    function AdminPanel({ employees, leaveTypes, editData, setEditData, saveLeaves, addEmployee, deleteEmployee, updateName, isSaving }) {
+    function AdminPanel({ employees, leaveTypes, leaveQuotas, editData, setEditData, saveLeaves, addEmployee, deleteEmployee, updateName, isSaving, editQuotas, setEditQuotas, saveQuotas }) {
       const [newName, setNewName] = useState('');
       const [editing, setEditing] = useState(null);
       const [editingName, setEditingName] = useState('');
 
       useEffect(() => { lucide.createIcons(); });
+
+      const hasQuotaChanges = useMemo(() => {
+        return leaveQuotas.some(q => (editQuotas[q.id] || q.quota) !== q.quota);
+      }, [leaveQuotas, editQuotas]);
 
       return (
         <div className="space-y-6">
@@ -373,6 +423,32 @@
                       className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:ring focus:ring-green-200 focus:outline-none" />
               <button type="submit" className="px-6 py-3 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 shadow">Tambah</button>
             </form>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-xl p-6 space-y-4 border-t-8 border-yellow-500">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <i data-lucide="calendar" className="w-6 h-6"></i> Kelola Kuota Cuti
+              </h2>
+              {hasQuotaChanges && (
+                <button onClick={saveQuotas} className="px-4 py-2 bg-indigo-500 text-white rounded-full font-bold hover:bg-indigo-600 shadow-lg">
+                  Simpan Kuota
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {leaveQuotas.map(quota => (
+                <div key={quota.id} className="flex flex-col p-3 bg-gray-100 rounded-lg shadow-sm">
+                  <label className="text-sm font-semibold text-gray-600 mb-1">{quota.type}</label>
+                  <input type="text"
+                    value={ editQuotas[quota.id] ?? quota.quota }
+                    onChange={e => setEditQuotas(prev => ({ ...prev, [quota.id]: e.target.value }))}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:border-yellow-500 focus:outline-none"
+                  />
+                  {quota.note && <p className="text-xs italic text-red-500 mt-1">{quota.note}</p>}
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -424,7 +500,7 @@
       );
     }
 
-    function UserPanel({ employees, selectedEmployee, setSelectedEmployee, leaveTypes, searchQuery, setSearchQuery, showFlow, setShowFlow, showCalendar, setShowCalendar }) {
+    function UserPanel({ employees, selectedEmployee, setSelectedEmployee, leaveTypes, leaveQuotas, searchQuery, setSearchQuery, showFlow, setShowFlow, showCalendar, setShowCalendar }) {
       const [todayLeaves, setTodayLeaves] = useState([]);
       useEffect(() => { lucide.createIcons(); });
 
