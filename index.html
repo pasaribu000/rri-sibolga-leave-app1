@@ -508,4 +508,232 @@
               {leaveQuotas.map(quota => (
                 <div key={quota.id} className="flex flex-col p-3 bg-gray-100 rounded-lg shadow-sm">
                   <div className="flex justify-between items-center mb-1">
-                    <label className="text-sm font-semibold text-gray-600">{quota.type}</
+                    <label className="text-sm font-semibold text-gray-600">{quota.type}</label>
+                    <button onClick={() => handleQuotaDelete(quota.id)} className="p-1 rounded-full text-red-500 hover:bg-red-100">
+                       <i data-lucide="trash-2" className="w-4 h-4"></i>
+                    </button>
+                  </div>
+                  <input type="text"
+                    value={ quota.quota }
+                    onChange={e => handleQuotaChange(quota.id, e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:border-yellow-500 focus:outline-none"
+                  />
+                  {quota.note && <p className="text-xs italic text-red-500 mt-1">{quota.note}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {employees.map(emp => (
+              <div key={emp.id} className="bg-white rounded-2xl shadow-xl p-6 space-y-4 border-t-8 border-indigo-400">
+                {editing === emp.id ? (
+                  <div className="flex items-center gap-2">
+                    <input value={editingName} onChange={e=>setEditingName(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none" />
+                    <button onClick={()=>{updateName(emp.id, editingName); setEditing(null); setEditingName('');}} className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                      <i data-lucide="check" className="w-4 h-4"></i>
+                    </button>
+                    <button onClick={()=>{setEditing(null); setEditingName('');}} className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                      <i data-lucide="x" className="w-4 h-4"></i>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-lg font-bold text-gray-800">{emp.name}</h2>
+                    <button onClick={()=>{setEditing(emp.id); setEditingName(emp.name);}} className="p-1 rounded-full text-indigo-500 hover:bg-indigo-100">
+                      <i data-lucide="pencil" className="w-4 h-4"></i>
+                    </button>
+                  </div>
+                )}
+                <div className="space-y-3 text-sm">
+                  {leaveTypes.map(t => (
+                    <div key={t.key} className="flex flex-col">
+                      <label className="text-gray-600 font-medium mb-1">{t.label}:</label>
+                      <input type="number"
+                        value={ (editData[emp.id] && editData[emp.id][t.key]) ?? emp.leaves[t.key] ?? 0 }
+                        onChange={e=>setEditData(prev=>({ ...prev, [emp.id]: { ...(prev[emp.id]||{}), [t.key]: Number(e.target.value) } }))}
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button onClick={()=>saveLeaves(emp.id)} className={`flex-1 px-4 py-2 text-white font-bold rounded-full shadow ${isSaving[emp.id]?'bg-gray-400':'bg-green-500 hover:bg-green-600'}`}>
+                    {isSaving[emp.id] ? 'Menyimpan…' : 'Simpan'}
+                  </button>
+                  <button onClick={()=>deleteEmployee(emp)} className="flex-1 px-4 py-2 bg-red-500 text-white font-bold rounded-full hover:bg-red-600 shadow">
+                    Hapus
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function UserPanel({ employees, selectedEmployee, setSelectedEmployee, leaveTypes, leaveQuotas, searchQuery, setSearchQuery, showFlow, setShowFlow, showCalendar, setShowCalendar }) {
+      const [todayLeaves, setTodayLeaves] = useState([]);
+      useEffect(() => { lucide.createIcons(); });
+
+      // Efek untuk mengambil data cuti dari Google Spreadsheet
+      useEffect(() => {
+        const fetchLeaveData = async () => {
+          const spreadsheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQg3iDe2R2fwIGjughldUclnZrOdkFRNVp0hXhWgHqakUXdqAlT-RyGNas8CO483ftqYuuu9IAGs0UZ/pub?gid=562275814&single=true&output=csv';
+          const today = new Date();
+          today.setHours(0, 0, 0, 0); // Atur waktu ke awal hari
+
+          try {
+            const response = await fetch(spreadsheetUrl);
+            const text = await response.text();
+            const leaveData = parseCSV(text);
+            const currentLeaves = leaveData.filter(leave => {
+              const rawStartDate = leave['Tanggal Mulai Cuti']?.split(' ')[0];
+              const rawEndDate = leave['Tanggal Selesai Cuti']?.split(' ')[0];
+              
+              if (!rawStartDate || !rawEndDate) return false;
+
+              const startDateParts = rawStartDate.split('/');
+              const endDateParts = rawEndDate.split('/');
+              
+              if (startDateParts.length === 3 && endDateParts.length === 3) {
+                const startDate = new Date(startDateParts[2], startDateParts[1] - 1, startDateParts[0]);
+                const endDate = new Date(endDateParts[2], endDateParts[1] - 1, endDateParts[0]);
+                startDate.setHours(0, 0, 0, 0);
+                endDate.setHours(0, 0, 0, 0);
+                return today >= startDate && today <= endDate;
+              }
+              return false;
+            });
+            setTodayLeaves(currentLeaves);
+          } catch (error) {
+            console.error("Gagal mengambil data cuti hari ini:", error);
+          }
+        };
+
+        fetchLeaveData();
+      }, []);
+
+      const filtered = React.useMemo(
+        () => employees.filter(e => e.name.toLowerCase().includes((searchQuery||'').toLowerCase())),
+        [employees, searchQuery]
+      );
+
+      return (
+        <div className="flex flex-col items-center">
+          <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6 max-w-2xl w-full border-t-8 border-green-500">
+            {showFlow ? (
+              <div>
+                <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">Alur Pengajuan Cuti</h2>
+                <ol className="list-decimal list-inside space-y-4 text-gray-700 text-lg">
+                  {["Lihat informasi cuti anda","Tentukan Jenis cuti dan Tanggal","Unduh berkas Persyaratan","Ajukan Cuti baru","Verifikasi oleh admin","Pemberitahuan oleh admin","Selamat cuti"].map((s,i)=>(
+                    <li key={i} className="p-3 bg-gray-50 rounded-lg shadow-sm transition hover:bg-indigo-50 hover:text-indigo-800">{s}</li>
+                  ))}
+                </ol>
+                <button onClick={()=>setShowFlow(false)} className="mt-8 w-full flex items-center justify-center px-6 py-3 bg-red-500 text-white font-bold rounded-full text-lg hover:bg-red-600 shadow">
+                  <i data-lucide="x" className="w-5 h-5 mr-2"></i> Tutup
+                </button>
+              </div>
+            ) : showCalendar ? (
+              <Calendar onClose={()=>setShowCalendar(false)} />
+            ) : (
+              <div>
+                <h2 className="text-3xl font-bold text-center text-gray-800">Selamat Datang di Aplikasi Cuti!</h2>
+                <div className="relative mt-6">
+                  <input
+                    type="text"
+                    placeholder="Cari nama Anda di sini…"
+                    value={searchQuery}
+                    onChange={e=>setSearchQuery(e.target.value)}
+                    className="w-full p-3 pl-10 border-2 border-gray-300 rounded-full focus:border-indigo-500 focus:ring focus:ring-indigo-200 outline-none"
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <i data-lucide="search" className="w-5 h-5"></i>
+                  </span>
+                </div>
+
+                {searchQuery && filtered.length>0 && (
+                  <div className="bg-gray-100 p-4 rounded-xl max-h-64 overflow-y-auto mt-4">
+                    <p className="text-gray-600 mb-2 font-semibold">Pilih nama Anda:</p>
+                    <div className="space-y-2">
+                      {filtered.map(emp => (
+                        <button key={emp.id} onClick={()=>setSelectedEmployee(emp)}
+                                 className={`w-full text-left p-3 rounded-lg transition ${selectedEmployee?.id===emp.id?'bg-indigo-200 text-indigo-800 ring-2 ring-indigo-500':'bg-white hover:bg-gray-200 text-gray-800'}`}>
+                          {emp.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <div className="bg-yellow-50 p-6 rounded-xl text-gray-700 mt-6 border-l-4 border-yellow-500">
+                  <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                    <i data-lucide="calendar" className="w-6 h-6 text-yellow-600"></i> Pegawai Cuti Hari Ini
+                  </h3>
+                  {todayLeaves.length > 0 ? (
+                    <ul className="list-disc list-inside space-y-2">
+                      {todayLeaves.map((leave, index) => (
+                        <li key={index} className="text-gray-800">
+                          <span className="font-bold">{leave['Nama Pegawai']}</span>:
+                          <span className="ml-2 text-gray-600">{leave['Jenis Cuti']}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500 italic">Tidak ada pegawai yang sedang cuti hari ini. 🎉</p>
+                  )}
+                </div>
+
+                <div className="bg-green-50 p-6 rounded-xl text-gray-700 mt-6">
+                  <h3 className="text-xl font-semibold mb-4 border-b pb-2 border-green-200">
+                    Informasi Cuti untuk {selectedEmployee?.name || "Nama Tidak Ditemukan"}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {leaveTypes.map(t => (
+                      <div key={t.key} className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
+                        <span className="font-medium">{t.label}:</span>
+                        <span className="text-2xl font-bold text-green-600">{selectedEmployee?.leaves?.[t.key] || 0}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-4 mt-6 w-full">
+                  <a href="https://drive.google.com/drive/folders/1Cgl3yOpeZgsBxZZv5YvGtwZ8to9FM3ZE?usp=sharing" target="_blank" rel="noopener" className="w-full flex items-center justify-center px-6 py-3 bg-yellow-500 text-white font-bold rounded-full text-lg hover:bg-yellow-600 shadow">
+                    <i data-lucide="folder-kanban" className="w-5 h-5 mr-2"></i> Unduh Persyaratan
+                  </a>
+                  <a href="https://docs.google.com/forms/d/e/1FAIpQLSfh0_-PQxHlgN8MPIGwVN0YBfwO9EMQxQ92cEAb818g5DloZg/viewform?usp=sharing&ouid=105802488582507153521" target="_blank" rel="noopener" className="w-full flex items-center justify-center px-6 py-3 bg-indigo-500 text-white font-bold rounded-full text-lg hover:bg-indigo-600 shadow">
+                    <i data-lucide="pencil" className="w-5 h-5 mr-2"></i> Ajukan Cuti Baru
+                  </a>
+                </div>
+
+                <button onClick={()=>setShowFlow(true)} className="mt-6 w-full flex items-center justify-center px-6 py-3 bg-gray-500 text-white font-bold rounded-full text-lg hover:bg-gray-600 shadow">
+                  <i data-lucide="clock" className="w-5 h-5 mr-2"></i> Lihat Alur Cuti
+                </button>
+
+                <button onClick={()=>setShowCalendar(true)} className="mt-4 w-full flex items-center justify-center px-6 py-3 bg-teal-500 text-white font-bold rounded-full text-lg hover:bg-teal-600 shadow">
+                  <i data-lucide="calendar-days" className="w-5 h-5 mr-2"></i> Lihat Kalender
+                </button>
+
+                <div className="bg-gray-50 rounded-2xl shadow-xl p-6 mt-6 space-y-3 border-t-8 border-yellow-500">
+                  <h3 className="text-xl font-bold text-gray-800 text-center mb-2">Jenis & Kuota Cuti</h3>
+                  {leaveQuotas.map((it,idx)=>(
+                    <div key={it.id || idx} className="flex flex-col md:flex-row md:items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                      <div className="font-semibold text-gray-700">{it.type}</div>
+                      <div className="text-gray-500">{it.quota} {it.note && <span className="text-xs italic text-red-500 ml-2 block md:inline-block">({it.note})</span>}</div>
+                    </div>
+                  ))}
+                </div>
+
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
+  </script>
+</body>
+</html>
