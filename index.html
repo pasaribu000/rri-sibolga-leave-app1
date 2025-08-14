@@ -164,7 +164,6 @@
       const [message, setMessage] = useState({ text: '', type: '' });
       const [employees, setEmployees] = useState([]);
       const [leaveQuotas, setLeaveQuotas] = useState([]);
-      const [initialLeaveQuotas, setInitialLeaveQuotas] = useState([]); // State untuk menyimpan data awal
       const [selectedEmployee, setSelectedEmployee] = useState(null);
       const [searchQuery, setSearchQuery] = useState('');
       const [editData, setEditData] = useState({});
@@ -172,16 +171,13 @@
       const [showFlow, setShowFlow] = useState(false);
       const [showCalendar, setShowCalendar] = useState(false);
 
-      // init icons
       useEffect(() => { lucide.createIcons(); });
 
-      // Time ticker
       useEffect(() => {
         const t = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => clearInterval(t);
       }, []);
 
-      // Firebase init & auth anon
       useEffect(() => {
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
@@ -193,7 +189,6 @@
         return () => stop();
       }, []);
 
-      // Firestore: subscribe employees
       useEffect(() => {
         const db = firebase.firestore();
         const ref = db.collection(`artifacts/${appId}/public/data/employees`);
@@ -226,7 +221,6 @@
         return () => unsub();
       }, []);
 
-      // Firestore: subscribe leave quotas
       useEffect(() => {
         const db = firebase.firestore();
         const ref = db.collection(`artifacts/${appId}/public/data/leaveQuotas`);
@@ -258,7 +252,6 @@
         const unsub = ref.orderBy('order').onSnapshot(snap => {
           const arr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
           setLeaveQuotas(arr);
-          setInitialLeaveQuotas(arr); // Simpan data awal dari Firestore
         }, err => {
           console.error(err);
           setMessage({ text: "Gagal memuat kuota cuti.", type: "error" });
@@ -271,7 +264,6 @@
         [employees, searchQuery]
       );
 
-      // Admin toggles
       const toggleAdmin = () => {
         if (isAdmin) {
           setIsAdmin(false); setShowPasswordInput(false); setAdminPassword('');
@@ -291,7 +283,6 @@
         }
       };
 
-      // Admin actions
       const saveLeaves = async (empId) => {
         setIsSaving(s => ({ ...s, [empId]: true }));
         const db = firebase.firestore();
@@ -304,42 +295,42 @@
         setMessage({ text: "Data cuti disimpan.", type: "success" });
       };
 
-      const saveQuotas = async () => {
-        const db = firebase.firestore();
-        const batch = db.batch();
-        const ref = db.collection(`artifacts/${appId}/public/data/leaveQuotas`);
-        
+      // Fungsi untuk menyimpan kuota cuti baru (menambahkan dokumen)
+      const addQuota = async (newQuota) => {
         try {
-          // Pertama, hapus kuota yang dihapus dari UI
-          const deletedQuotas = initialLeaveQuotas.filter(initial => !leaveQuotas.some(current => current.id === initial.id));
-          deletedQuotas.forEach(q => {
-            batch.delete(ref.doc(q.id));
-          });
-          
-          // Kemudian, simpan atau perbarui kuota yang ada
-          for (const quota of leaveQuotas) {
-            // Jika tidak ada ID, ini adalah item baru
-            if (!quota.id) {
-              batch.set(ref.doc(), { type: quota.type, quota: quota.quota, note: quota.note, order: quota.order });
-            } else {
-              // Jika ada ID, ini adalah item yang diperbarui
-              const docRef = ref.doc(quota.id);
-              batch.set(docRef, { type: quota.type, quota: quota.quota, note: quota.note, order: quota.order }, { merge: true });
-            }
-          }
+          const db = firebase.firestore();
+          const ref = db.collection(`artifacts/${appId}/public/data/leaveQuotas`);
+          await ref.add(newQuota);
+          setMessage({ text: "Kuota cuti baru berhasil ditambahkan.", type: "success" });
+        } catch (error) {
+          console.error("Gagal menambahkan kuota cuti:", error);
+          setMessage({ text: "Gagal menambahkan kuota cuti. Coba lagi.", type: "error" });
+        }
+      };
 
-          await batch.commit();
+      // Fungsi untuk memperbarui kuota cuti yang sudah ada
+      const updateQuota = async (id, updatedFields) => {
+        try {
+          const db = firebase.firestore();
+          await db.collection(`artifacts/${appId}/public/data/leaveQuotas`).doc(id).set(updatedFields, { merge: true });
           setMessage({ text: "Kuota cuti berhasil diperbarui.", type: "success" });
         } catch (error) {
-            console.error("Gagal menyimpan kuota cuti:", error);
-            setMessage({ text: "Gagal menyimpan kuota cuti. Coba lagi.", type: "error" });
+          console.error("Gagal memperbarui kuota cuti:", error);
+          setMessage({ text: "Gagal memperbarui kuota cuti. Coba lagi.", type: "error" });
         }
       };
       
-      const deleteQuota = (id) => {
+      // Fungsi untuk menghapus kuota cuti
+      const deleteQuota = async (id) => {
         if (!confirm("Hapus jenis cuti ini?")) return;
-        setLeaveQuotas(prev => prev.filter(q => q.id !== id));
-        setMessage({ text: "Kuota cuti siap dihapus. Tekan 'Simpan' untuk konfirmasi.", type: "success" });
+        try {
+            const db = firebase.firestore();
+            await db.collection(`artifacts/${appId}/public/data/leaveQuotas`).doc(id).delete();
+            setMessage({ text: "Jenis cuti berhasil dihapus.", type: "success" });
+        } catch (error) {
+            console.error("Gagal menghapus kuota cuti:", error);
+            setMessage({ text: "Gagal menghapus kuota cuti. Coba lagi.", type: "error" });
+        }
       };
 
       const addEmployee = async (name) => {
@@ -407,8 +398,8 @@
           </div>
 
           {isAdmin ? (
-            <AdminPanel employees={employees} leaveTypes={leaveTypes} leaveQuotas={leaveQuotas} setLeaveQuotas={setLeaveQuotas} initialLeaveQuotas={initialLeaveQuotas} editData={editData} setEditData={setEditData}
-                        saveLeaves={saveLeaves} saveQuotas={saveQuotas} deleteQuota={deleteQuota}
+            <AdminPanel employees={employees} leaveTypes={leaveTypes} leaveQuotas={leaveQuotas} setLeaveQuotas={setLeaveQuotas} editData={editData} setEditData={setEditData}
+                        saveLeaves={saveLeaves} addQuota={addQuota} updateQuota={updateQuota} deleteQuota={deleteQuota}
                         addEmployee={addEmployee} deleteEmployee={deleteEmployee} updateName={updateName} isSaving={isSaving} />
           ) : (
             <UserPanel employees={employees} selectedEmployee={selectedEmployee} setSelectedEmployee={setSelectedEmployee}
@@ -419,7 +410,7 @@
       );
     }
 
-    function AdminPanel({ employees, leaveTypes, leaveQuotas, setLeaveQuotas, initialLeaveQuotas, editData, setEditData, saveLeaves, addEmployee, deleteEmployee, updateName, isSaving, saveQuotas, deleteQuota }) {
+    function AdminPanel({ employees, leaveTypes, leaveQuotas, setLeaveQuotas, editData, setEditData, saveLeaves, addEmployee, deleteEmployee, updateName, isSaving, addQuota, updateQuota, deleteQuota }) {
       const [newName, setNewName] = useState('');
       const [editing, setEditing] = useState(null);
       const [editingName, setEditingName] = useState('');
@@ -428,30 +419,16 @@
 
       useEffect(() => { lucide.createIcons(); });
       
-      // Logika yang diperbaiki untuk mendeteksi perubahan kuota cuti
-      const hasChanges = useMemo(() => {
-        if (leaveQuotas.length !== initialLeaveQuotas.length) return true;
-        for (let i = 0; i < leaveQuotas.length; i++) {
-            const current = leaveQuotas[i];
-            const initial = initialLeaveQuotas.find(q => q.id === current.id);
-            if (!initial || current.type !== initial.type || current.quota !== initial.quota) {
-                return true;
-            }
-        }
-        return false;
-      }, [leaveQuotas, initialLeaveQuotas]);
-
-      const handleAddQuota = (e) => {
+      const handleAddQuota = async (e) => {
         e.preventDefault();
         if (newQuotaType && newQuotaValue) {
           const newOrder = leaveQuotas.length > 0 ? Math.max(...leaveQuotas.map(q => q.order || 0)) + 1 : 1;
           const newQuota = {
-            // ID tidak ada, menandakan ini item baru yang belum disimpan
             type: newQuotaType,
             quota: newQuotaValue,
             order: newOrder,
           };
-          setLeaveQuotas(prev => [...prev, newQuota]);
+          await addQuota(newQuota);
           setNewQuotaType('');
           setNewQuotaValue('');
         }
@@ -459,6 +436,7 @@
       
       const handleQuotaChange = (id, newQuotaValue) => {
         setLeaveQuotas(prev => prev.map(q => q.id === id ? { ...q, quota: newQuotaValue } : q));
+        updateQuota(id, { quota: newQuotaValue });
       };
 
       const handleQuotaDelete = (id) => {
@@ -483,11 +461,6 @@
               <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
                 <i data-lucide="calendar" className="w-6 h-6"></i> Kelola Kuota Cuti
               </h2>
-              {hasChanges && (
-                <button onClick={saveQuotas} className="px-4 py-2 bg-indigo-500 text-white rounded-full font-bold hover:bg-indigo-600 shadow-lg">
-                  Simpan Perubahan Kuota
-                </button>
-              )}
             </div>
             
             <form onSubmit={handleAddQuota} className="bg-gray-100 p-4 rounded-xl flex flex-col md:flex-row gap-3 items-end">
@@ -577,12 +550,11 @@
       const [todayLeaves, setTodayLeaves] = useState([]);
       useEffect(() => { lucide.createIcons(); });
 
-      // Efek untuk mengambil data cuti dari Google Spreadsheet
       useEffect(() => {
         const fetchLeaveData = async () => {
           const spreadsheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQg3iDe2R2fwIGjughldUclnZrOdkFRNVp0hXhWgHqakUXdqAlT-RyGNas8CO483ftqYuuu9IAGs0UZ/pub?gid=562275814&single=true&output=csv';
           const today = new Date();
-          today.setHours(0, 0, 0, 0); // Atur waktu ke awal hari
+          today.setHours(0, 0, 0, 0);
 
           try {
             const response = await fetch(spreadsheetUrl);
