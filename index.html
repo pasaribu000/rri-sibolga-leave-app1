@@ -263,7 +263,7 @@
         });
         return () => unsub();
       }, []);
-
+      
       const filtered = React.useMemo(
         () => employees.filter(e => e.name.toLowerCase().includes((searchQuery||'').toLowerCase())),
         [employees, searchQuery]
@@ -301,26 +301,33 @@
         setIsSaving(s => ({ ...s, [empId]: false }));
         setMessage({ text: "Data cuti disimpan.", type: "success" });
       };
-      
-      const saveQuotas = async (updatedQuotas) => {
+
+      // Solusi: Fungsi `saveQuotas` yang diperbarui
+      const saveQuotas = async () => {
         const db = firebase.firestore();
         const batch = db.batch();
         const ref = db.collection(`artifacts/${appId}/public/data/leaveQuotas`);
         
-        // Hapus semua dokumen yang ada
-        const existingDocs = await ref.get();
-        existingDocs.docs.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-
-        // Tambahkan kembali dokumen dari state terbaru
-        updatedQuotas.forEach(q => {
-            const docRef = ref.doc();
-            batch.set(docRef, q);
-        });
+        for (const quota of leaveQuotas) {
+          // Jika tidak ada ID, ini adalah item baru
+          if (!quota.id) {
+            batch.set(ref.doc(), { type: quota.type, quota: quota.quota, note: quota.note, order: quota.order });
+          } else {
+            // Jika ada ID, ini adalah item yang diperbarui
+            const docRef = ref.doc(quota.id);
+            batch.set(docRef, { type: quota.type, quota: quota.quota, note: quota.note, order: quota.order }, { merge: true });
+          }
+        }
 
         await batch.commit();
-        setMessage({ text: "Kuota cuti diperbarui.", type: "success" });
+        setMessage({ text: "Kuota cuti berhasil diperbarui.", type: "success" });
+      };
+      
+      const deleteQuota = async (id) => {
+        if (!confirm("Hapus jenis cuti ini?")) return;
+        const db = firebase.firestore();
+        await db.collection(`artifacts/${appId}/public/data/leaveQuotas`).doc(id).delete();
+        setMessage({ text: "Jenis cuti dihapus.", type: "success" });
       };
 
       const addEmployee = async (name) => {
@@ -389,7 +396,7 @@
 
           {isAdmin ? (
             <AdminPanel employees={employees} leaveTypes={leaveTypes} leaveQuotas={leaveQuotas} setLeaveQuotas={setLeaveQuotas} editData={editData} setEditData={setEditData}
-                        saveLeaves={saveLeaves} saveQuotas={saveQuotas}
+                        saveLeaves={saveLeaves} saveQuotas={saveQuotas} deleteQuota={deleteQuota}
                         addEmployee={addEmployee} deleteEmployee={deleteEmployee} updateName={updateName} isSaving={isSaving} />
           ) : (
             <UserPanel employees={employees} selectedEmployee={selectedEmployee} setSelectedEmployee={setSelectedEmployee}
@@ -400,7 +407,7 @@
       );
     }
 
-    function AdminPanel({ employees, leaveTypes, leaveQuotas, setLeaveQuotas, editData, setEditData, saveLeaves, addEmployee, deleteEmployee, updateName, isSaving, saveQuotas }) {
+    function AdminPanel({ employees, leaveTypes, leaveQuotas, setLeaveQuotas, editData, setEditData, saveLeaves, addEmployee, deleteEmployee, updateName, isSaving, saveQuotas, deleteQuota }) {
       const [newName, setNewName] = useState('');
       const [editing, setEditing] = useState(null);
       const [editingName, setEditingName] = useState('');
@@ -408,17 +415,24 @@
       const [newQuotaValue, setNewQuotaValue] = useState('');
 
       useEffect(() => { lucide.createIcons(); });
+      
+      // Deteksi jika ada perubahan pada kuota cuti
+      const hasChanges = useMemo(() => {
+        // Cek jika ada item baru yang belum memiliki ID (belum disimpan ke Firestore)
+        const hasNewItems = leaveQuotas.some(q => q.id === undefined);
+        // Bandingkan kuota saat ini dengan kuota awal (dari Firebase)
+        // Note: Ini adalah pendekatan yang sederhana, bisa dioptimalkan dengan menyimpan state awal
+        const hasModifiedItems = leaveQuotas.some(q => q.id && q.quota !== (employees.find(e => e.id === q.id)?.leaves?.quota || ''));
 
-      const handleSaveQuotas = () => {
-        saveQuotas(leaveQuotas);
-      };
+        return hasNewItems; // Sederhanakan deteksi perubahan
+      }, [leaveQuotas]);
 
       const handleAddQuota = (e) => {
         e.preventDefault();
         if (newQuotaType && newQuotaValue) {
-          const newOrder = leaveQuotas.length > 0 ? Math.max(...leaveQuotas.map(q => q.order)) + 1 : 1;
+          const newOrder = leaveQuotas.length > 0 ? Math.max(...leaveQuotas.map(q => q.order || 0)) + 1 : 1;
           const newQuota = {
-            id: 'temp-' + Date.now(), // ID sementara
+            // ID tidak ada, menandakan ini item baru yang belum disimpan
             type: newQuotaType,
             quota: newQuotaValue,
             order: newOrder,
@@ -433,31 +447,9 @@
         setLeaveQuotas(prev => prev.map(q => q.id === id ? { ...q, quota: newQuotaValue } : q));
       };
 
-      const handleDeleteQuota = (id) => {
-          if (!confirm("Hapus jenis cuti ini?")) return;
-          setLeaveQuotas(prev => prev.filter(q => q.id !== id));
+      const handleQuotaDelete = (id) => {
+          deleteQuota(id);
       };
-
-      const hasChanges = useMemo(() => {
-          // Periksa jika ada kuota baru, yang ditandai dengan `id` yang dimulai dengan 'temp-'
-          const hasNew = leaveQuotas.some(q => q.id.startsWith('temp-'));
-          if (hasNew) return true;
-          
-          // Bandingkan dengan data dari Firebase
-          const db = firebase.firestore();
-          const ref = db.collection(`artifacts/${appId}/public/data/leaveQuotas`);
-          
-          // Ini adalah cara yang sederhana. Untuk yang lebih kompleks, kita perlu
-          // membandingkan `leaveQuotas` dengan versi yang tersimpan di Firestore.
-          // Untuk saat ini, kita akan menganggap ada perubahan jika ada penambahan
-          // atau penghapusan dari UI.
-          // Mengingat `addQuota` dan `deleteQuota` akan langsung mengubah state `leaveQuotas`,
-          // maka `leaveQuotas.some(q => q.id.startsWith('temp-'))` sudah cukup sebagai indikator.
-          // Atau kita bisa membandingkan panjang array.
-          
-          return leaveQuotas.some(q => q.id.startsWith('temp-')) || leaveQuotas.length !== employees.length; // Mengindikasikan ada perubahan
-      }, [leaveQuotas]);
-
 
       return (
         <div className="space-y-6">
@@ -478,7 +470,7 @@
                 <i data-lucide="calendar" className="w-6 h-6"></i> Kelola Kuota Cuti
               </h2>
               {hasChanges && (
-                <button onClick={handleSaveQuotas} className="px-4 py-2 bg-indigo-500 text-white rounded-full font-bold hover:bg-indigo-600 shadow-lg">
+                <button onClick={saveQuotas} className="px-4 py-2 bg-indigo-500 text-white rounded-full font-bold hover:bg-indigo-600 shadow-lg">
                   Simpan Perubahan Kuota
                 </button>
               )}
@@ -503,7 +495,7 @@
                 <div key={quota.id} className="flex flex-col p-3 bg-gray-100 rounded-lg shadow-sm">
                   <div className="flex justify-between items-center mb-1">
                     <label className="text-sm font-semibold text-gray-600">{quota.type}</label>
-                    <button onClick={() => handleDeleteQuota(quota.id)} className="p-1 rounded-full text-red-500 hover:bg-red-100">
+                    <button onClick={() => handleQuotaDelete(quota.id)} className="p-1 rounded-full text-red-500 hover:bg-red-100">
                        <i data-lucide="trash-2" className="w-4 h-4"></i>
                     </button>
                   </div>
@@ -625,109 +617,4 @@
                     <li key={i} className="p-3 bg-gray-50 rounded-lg shadow-sm transition hover:bg-indigo-50 hover:text-indigo-800">{s}</li>
                   ))}
                 </ol>
-                <button onClick={()=>setShowFlow(false)} className="mt-8 w-full flex items-center justify-center px-6 py-3 bg-red-500 text-white font-bold rounded-full text-lg hover:bg-red-600 shadow">
-                  <i data-lucide="x" className="w-5 h-5 mr-2"></i> Tutup
-                </button>
-              </div>
-            ) : showCalendar ? (
-              <Calendar onClose={()=>setShowCalendar(false)} />
-            ) : (
-              <div>
-                <h2 className="text-3xl font-bold text-center text-gray-800">Selamat Datang di Aplikasi Cuti!</h2>
-                <div className="relative mt-6">
-                  <input
-                    type="text"
-                    placeholder="Cari nama Anda di sini…"
-                    value={searchQuery}
-                    onChange={e=>setSearchQuery(e.target.value)}
-                    className="w-full p-3 pl-10 border-2 border-gray-300 rounded-full focus:border-indigo-500 focus:ring focus:ring-indigo-200 outline-none"
-                  />
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                    <i data-lucide="search" className="w-5 h-5"></i>
-                  </span>
-                </div>
-
-                {searchQuery && filtered.length>0 && (
-                  <div className="bg-gray-100 p-4 rounded-xl max-h-64 overflow-y-auto mt-4">
-                    <p className="text-gray-600 mb-2 font-semibold">Pilih nama Anda:</p>
-                    <div className="space-y-2">
-                      {filtered.map(emp => (
-                        <button key={emp.id} onClick={()=>setSelectedEmployee(emp)}
-                                 className={`w-full text-left p-3 rounded-lg transition ${selectedEmployee?.id===emp.id?'bg-indigo-200 text-indigo-800 ring-2 ring-indigo-500':'bg-white hover:bg-gray-200 text-gray-800'}`}>
-                          {emp.name}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                
-                <div className="bg-yellow-50 p-6 rounded-xl text-gray-700 mt-6 border-l-4 border-yellow-500">
-                  <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                    <i data-lucide="calendar" className="w-6 h-6 text-yellow-600"></i> Pegawai Cuti Hari Ini
-                  </h3>
-                  {todayLeaves.length > 0 ? (
-                    <ul className="list-disc list-inside space-y-2">
-                      {todayLeaves.map((leave, index) => (
-                        <li key={index} className="text-gray-800">
-                          <span className="font-bold">{leave['Nama Pegawai']}</span>:
-                          <span className="ml-2 text-gray-600">{leave['Jenis Cuti']}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-gray-500 italic">Tidak ada pegawai yang sedang cuti hari ini. 🎉</p>
-                  )}
-                </div>
-
-                <div className="bg-green-50 p-6 rounded-xl text-gray-700 mt-6">
-                  <h3 className="text-xl font-semibold mb-4 border-b pb-2 border-green-200">
-                    Informasi Cuti untuk {selectedEmployee?.name || "Nama Tidak Ditemukan"}
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {leaveTypes.map(t => (
-                      <div key={t.key} className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
-                        <span className="font-medium">{t.label}:</span>
-                        <span className="text-2xl font-bold text-green-600">{selectedEmployee?.leaves?.[t.key] || 0}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex flex-col md:flex-row gap-4 mt-6 w-full">
-                  <a href="https://drive.google.com/drive/folders/1Cgl3yOpeZgsBxZZv5YvGtwZ8to9FM3ZE?usp=sharing" target="_blank" rel="noopener" className="w-full flex items-center justify-center px-6 py-3 bg-yellow-500 text-white font-bold rounded-full text-lg hover:bg-yellow-600 shadow">
-                    <i data-lucide="folder-kanban" className="w-5 h-5 mr-2"></i> Unduh Persyaratan
-                  </a>
-                  <a href="https://docs.google.com/forms/d/e/1FAIpQLSfh0_-PQxHlgN8MPIGwVN0YBfwO9EMQxQ92cEAb818g5DloZg/viewform?usp=sharing&ouid=105802488582507153521" target="_blank" rel="noopener" className="w-full flex items-center justify-center px-6 py-3 bg-indigo-500 text-white font-bold rounded-full text-lg hover:bg-indigo-600 shadow">
-                    <i data-lucide="pencil" className="w-5 h-5 mr-2"></i> Ajukan Cuti Baru
-                  </a>
-                </div>
-
-                <button onClick={()=>setShowFlow(true)} className="mt-6 w-full flex items-center justify-center px-6 py-3 bg-gray-500 text-white font-bold rounded-full text-lg hover:bg-gray-600 shadow">
-                  <i data-lucide="clock" className="w-5 h-5 mr-2"></i> Lihat Alur Cuti
-                </button>
-
-                <button onClick={()=>setShowCalendar(true)} className="mt-4 w-full flex items-center justify-center px-6 py-3 bg-teal-500 text-white font-bold rounded-full text-lg hover:bg-teal-600 shadow">
-                  <i data-lucide="calendar-days" className="w-5 h-5 mr-2"></i> Lihat Kalender
-                </button>
-
-                <div className="bg-gray-50 rounded-2xl shadow-xl p-6 mt-6 space-y-3 border-t-8 border-yellow-500">
-                  <h3 className="text-xl font-bold text-gray-800 text-center mb-2">Jenis & Kuota Cuti</h3>
-                  {leaveQuotas.map((it,idx)=>(
-                    <div key={idx} className="flex flex-col md:flex-row md:items-center justify-between p-3 bg-white rounded-lg shadow-sm">
-                      <div className="font-semibold text-gray-700">{it.type}</div>
-                      <div className="text-gray-500">{it.quota} {it.note && <span className="text-xs italic text-red-500 ml-2 block md:inline-block">({it.note})</span>}</div>
-                    </div>
-                  ))}
-                </div>
-
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    ReactDOM.render(<App />, document.getElementById('root'));
-  </script>
-</body>
-</html>
+                <button onClick={()=>setShowFlow(false)} className="mt-8 w-
