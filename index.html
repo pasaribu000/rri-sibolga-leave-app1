@@ -58,18 +58,45 @@
       { type: 'Bersama', quota: '7 hari', note: 'sewaktu-waktu dapat berubah' },
     ];
     
-    // Fungsi baru untuk mengolah data CSV
+    // Fungsi pengurai CSV yang lebih tangguh untuk menangani koma dalam nama pegawai
     const parseCSV = (csv) => {
       const lines = csv.split('\n');
-      const headers = lines[0].split(',').map(h => h.trim());
+      const headers = ['Timestamp', 'Nama Pegawai', 'Jenis Cuti', 'Tanggal Mulai Cuti', 'Tanggal Selesai Cuti', 'Unggah Berkas Persyaratan', 'Alamat Email Pegawai'];
       const data = [];
+      const numExpectedColumns = headers.length;
+
       for (let i = 1; i < lines.length; i++) {
         if (lines[i].trim() === '') continue;
         const values = lines[i].split(',').map(v => v.trim());
         const obj = {};
-        headers.forEach((header, index) => {
-          obj[header] = values[index];
-        });
+
+        // Cek apakah ada koma ekstra yang memecah data
+        if (values.length > numExpectedColumns) {
+          // Asumsi koma ekstra hanya ada di kolom 'Nama Pegawai'
+          const timestamp = values[0];
+          const email = values[values.length - 1];
+          const uploadLink = values[values.length - 2];
+          const endDate = values[values.length - 3];
+          const startDate = values[values.length - 4];
+          const leaveType = values[values.length - 5];
+          
+          // Gabungkan kembali bagian-bagian nama pegawai yang terpecah
+          const nameParts = values.slice(1, values.length - 5);
+          const name = nameParts.join(', ');
+
+          // Atur ulang array nilai
+          const newValues = [timestamp, name, leaveType, startDate, endDate, uploadLink, email];
+          
+          headers.forEach((header, index) => {
+            obj[header] = newValues[index];
+          });
+
+        } else {
+          // Jika tidak ada koma ekstra, proses seperti biasa
+          headers.forEach((header, index) => {
+            obj[header] = values[index];
+          });
+        }
         data.push(obj);
       }
       return data;
@@ -413,7 +440,6 @@
             const text = await response.text();
             const leaveData = parseCSV(text);
             const currentLeaves = leaveData.filter(leave => {
-              // --- Perbaikan pada bagian ini (menangani timestamp) ---
               const rawStartDate = leave['Tanggal Mulai Cuti']?.split(' ')[0];
               const rawEndDate = leave['Tanggal Selesai Cuti']?.split(' ')[0];
               
@@ -423,13 +449,14 @@
               const endDateParts = rawEndDate.split('/');
               
               if (startDateParts.length === 3 && endDateParts.length === 3) {
+                // Perbaikan cara parsing tanggal untuk memastikan format DD/MM/YYYY
                 const startDate = new Date(startDateParts[2], startDateParts[1] - 1, startDateParts[0]);
                 const endDate = new Date(endDateParts[2], endDateParts[1] - 1, endDateParts[0]);
                 startDate.setHours(0, 0, 0, 0);
                 endDate.setHours(0, 0, 0, 0);
                 return today >= startDate && today <= endDate;
               }
-              return false; // Kembali false jika format tanggal tidak valid
+              return false;
             });
             setTodayLeaves(currentLeaves);
           } catch (error) {
