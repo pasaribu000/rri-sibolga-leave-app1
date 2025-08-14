@@ -413,9 +413,14 @@
             const text = await response.text();
             const leaveData = parseCSV(text);
             const currentLeaves = leaveData.filter(leave => {
-              // --- Perbaikan pada bagian ini ---
-              const startDateParts = leave['Tanggal Mulai Cuti'].split('/');
-              const endDateParts = leave['Tanggal Selesai Cuti'].split('/');
+              // --- Perbaikan pada bagian ini (menangani timestamp) ---
+              const rawStartDate = leave['Tanggal Mulai Cuti']?.split(' ')[0];
+              const rawEndDate = leave['Tanggal Selesai Cuti']?.split(' ')[0];
+              
+              if (!rawStartDate || !rawEndDate) return false;
+
+              const startDateParts = rawStartDate.split('/');
+              const endDateParts = rawEndDate.split('/');
               
               if (startDateParts.length === 3 && endDateParts.length === 3) {
                 const startDate = new Date(startDateParts[2], startDateParts[1] - 1, startDateParts[0]);
