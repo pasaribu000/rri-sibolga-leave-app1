@@ -4,18 +4,13 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Aplikasi Cuti RRI Sibolga</title>
-  <!-- TailwindCSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- React 18 UMD -->
   <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <!-- Babel Standalone for JSX -->
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <!-- Firebase COMPAT (namespaced) to avoid bundlers -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-  <!-- Lucide (browser) -->
   <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
   <style>
     /* Prevent FOUC for lucide icons */
@@ -62,6 +57,24 @@
       { type: 'Di Luar Tanggungan', quota: '3 tahun' },
       { type: 'Bersama', quota: '7 hari', note: 'sewaktu-waktu dapat berubah' },
     ];
+    
+    // Fungsi baru untuk mengolah data CSV
+    const parseCSV = (csv) => {
+      const lines = csv.split('\n');
+      const headers = lines[0].split(',').map(h => h.trim());
+      const data = [];
+      for (let i = 1; i < lines.length; i++) {
+        if (lines[i].trim() === '') continue;
+        const values = lines[i].split(',').map(v => v.trim());
+        const obj = {};
+        headers.forEach((header, index) => {
+          obj[header] = values[index];
+        });
+        data.push(obj);
+      }
+      return data;
+    };
+
 
     function Header({ currentTime }) {
       useEffect(() => { lucide.createIcons(); });
@@ -385,7 +398,35 @@
     }
 
     function UserPanel({ employees, selectedEmployee, setSelectedEmployee, leaveTypes, searchQuery, setSearchQuery, showFlow, setShowFlow, showCalendar, setShowCalendar }) {
+      const [todayLeaves, setTodayLeaves] = useState([]);
       useEffect(() => { lucide.createIcons(); });
+
+      // Efek untuk mengambil data cuti dari Google Spreadsheet
+      useEffect(() => {
+        const fetchLeaveData = async () => {
+          const spreadsheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQg3iDe2R2fwIGjughldUclnZrOdkFRNVp0hXhWgHqakUXdqAlT-RyGNas8CO483ftqYuuu9IAGs0UZ/pub?gid=562275814&single=true&output=csv';
+          const today = new Date();
+          today.setHours(0, 0, 0, 0); // Atur waktu ke awal hari
+
+          try {
+            const response = await fetch(spreadsheetUrl);
+            const text = await response.text();
+            const leaveData = parseCSV(text);
+            const currentLeaves = leaveData.filter(leave => {
+              const startDate = new Date(leave['Tanggal Mulai Cuti']);
+              const endDate = new Date(leave['Tanggal Selesai Cuti']);
+              startDate.setHours(0, 0, 0, 0);
+              endDate.setHours(0, 0, 0, 0);
+              return today >= startDate && today <= endDate;
+            });
+            setTodayLeaves(currentLeaves);
+          } catch (error) {
+            console.error("Gagal mengambil data cuti hari ini:", error);
+          }
+        };
+
+        fetchLeaveData();
+      }, []);
 
       const filtered = React.useMemo(
         () => employees.filter(e => e.name.toLowerCase().includes((searchQuery||'').toLowerCase())),
@@ -438,6 +479,24 @@
                     </div>
                   </div>
                 )}
+                
+                <div className="bg-yellow-50 p-6 rounded-xl text-gray-700 mt-6 border-l-4 border-yellow-500">
+                  <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                    <i data-lucide="calendar" className="w-6 h-6 text-yellow-600"></i> Pegawai Cuti Hari Ini
+                  </h3>
+                  {todayLeaves.length > 0 ? (
+                    <ul className="list-disc list-inside space-y-2">
+                      {todayLeaves.map((leave, index) => (
+                        <li key={index} className="text-gray-800">
+                          <span className="font-bold">{leave['Nama Pegawai']}</span>:
+                          <span className="ml-2 text-gray-600">{leave['Jenis Cuti']}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500 italic">Tidak ada pegawai yang sedang cuti hari ini. 🎉</p>
+                  )}
+                </div>
 
                 <div className="bg-green-50 p-6 rounded-xl text-gray-700 mt-6">
                   <h3 className="text-xl font-semibold mb-4 border-b pb-2 border-green-200">
