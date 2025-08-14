@@ -307,18 +307,6 @@
         }
       };
 
-      const addQuota = async (newQuota) => {
-        try {
-          const db = firebase.firestore();
-          const ref = db.collection(`artifacts/${appId}/public/data/leaveQuotas`);
-          await ref.add(newQuota);
-          setMessage({ text: "Kuota cuti baru berhasil ditambahkan.", type: "success" });
-        } catch (error) {
-          console.error("Gagal menambahkan kuota cuti:", error);
-          setMessage({ text: "Gagal menambahkan kuota cuti. Coba lagi.", type: "error" });
-        }
-      };
-
       const updateQuota = async (id, updatedFields) => {
         try {
           const db = firebase.firestore();
@@ -422,9 +410,9 @@
           </div>
 
           {isAdmin ? (
-            <AdminPanel employees={employees} leaveTypes={leaveTypes} leaveQuotas={leaveQuotas} setLeaveQuotas={setLeaveQuotas} editData={editData} setEditData={setEditData}
-                        saveLeaves={saveLeaves} addQuota={addQuota} updateQuota={updateQuota} deleteQuota={deleteQuota}
-                        addEmployee={addEmployee} deleteEmployee={deleteEmployee} updateName={updateName} isSaving={isSaving} />
+            <AdminPanel employees={employees} leaveTypes={leaveTypes} leaveQuotas={leaveQuotas} editData={editData} setEditData={setEditData}
+                        saveLeaves={saveLeaves} updateQuota={updateQuota} deleteQuota={deleteQuota}
+                        addEmployee={addEmployee} deleteEmployee={deleteEmployee} updateName={updateName} isSaving={isSaving} setMessage={setMessage} />
           ) : (
             <UserPanel employees={employees} selectedEmployee={selectedEmployee} setSelectedEmployee={setSelectedEmployee}
                         leaveTypes={leaveTypes} leaveQuotas={leaveQuotas} searchQuery={searchQuery} setSearchQuery={setSearchQuery}
@@ -434,7 +422,7 @@
       );
     }
 
-    function AdminPanel({ employees, leaveTypes, leaveQuotas, setLeaveQuotas, editData, setEditData, saveLeaves, addEmployee, deleteEmployee, updateName, isSaving, addQuota, updateQuota, deleteQuota }) {
+    function AdminPanel({ employees, leaveTypes, leaveQuotas, editData, setEditData, saveLeaves, addEmployee, deleteEmployee, updateName, isSaving, updateQuota, deleteQuota, setMessage }) {
       const [newName, setNewName] = useState('');
       const [editing, setEditing] = useState(null);
       const [editingName, setEditingName] = useState('');
@@ -449,21 +437,29 @@
 
       useEffect(() => { lucide.createIcons(); });
       
-      // Handle penambahan kuota baru
+      // Menggunakan try/catch langsung di sini untuk penanganan error yang lebih baik
       const handleAddQuota = async (e) => {
         e.preventDefault();
         if (newQuotaType && newQuotaValue) {
           setIsAddingQuota(true);
-          const newOrder = leaveQuotas.length > 0 ? Math.max(...leaveQuotas.map(q => q.order || 0)) + 1 : 1;
-          const newQuota = {
-            type: newQuotaType,
-            quota: newQuotaValue,
-            order: newOrder,
-          };
-          await addQuota(newQuota);
-          setNewQuotaType('');
-          setNewQuotaValue('');
-          setIsAddingQuota(false);
+          const db = firebase.firestore();
+          const ref = db.collection(`artifacts/${appId}/public/data/leaveQuotas`);
+          try {
+            const newOrder = leaveQuotas.length > 0 ? Math.max(...leaveQuotas.map(q => q.order || 0)) + 1 : 1;
+            await ref.add({
+              type: newQuotaType,
+              quota: newQuotaValue,
+              order: newOrder,
+            });
+            setMessage({ text: "Kuota cuti baru berhasil ditambahkan.", type: "success" });
+            setNewQuotaType('');
+            setNewQuotaValue('');
+          } catch (error) {
+            console.error("Gagal menambahkan kuota cuti:", error);
+            setMessage({ text: "Gagal menambahkan kuota cuti. Coba lagi.", type: "error" });
+          } finally {
+            setIsAddingQuota(false);
+          }
         }
       };
 
