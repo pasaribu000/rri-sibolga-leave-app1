@@ -40,7 +40,7 @@
     };
 
     // App constants
-    const appId = "default-app-id";
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
     const correctAdminPassword = "rriadmin2025";
     const initialEmployees = ["Yanni Peter Latuheru, S.Sos", "Ichwansyah Pohan, S.E", "Rosmawan Hutabarat, S.E", "Viktor Hamonangan Hutabarat", "Khairil", "Vivi Tri Doharny Daulay", "Diskatarisa Hutabarat", "Novita Sari Putri S.E", "Silverius Hamonangan P. Purba, S.Sos", "Frans Martuani Sinaga, S.M", "Ade Wulan Septyaningsih, S.IP", "Nurhamni Ichwarti, S.Sos", "Citra Priadi Pasaribu, S.IP", "Azis Fahri Tanjung, S.Kom", "Annisa Lestari Nasution, A.Md.Ak", "Putri Andriani, A.Md.Ak", "Mahani Aprilia, A.Md.Ak", "Idola Pratiwi Sinaga, A.md.Pjk", "Ray Wiranta, A.Md.A.B", "Indah Farima Putri, A.Md", "Hans Pierre Sitohang, A.Md", "Sopiah Hasibuan, A.Md", "Aziziah khurfatul Janah, A.Md.Ds", "Astrid khairani Sinaga, A.Md", "Intan Friskila hondro, A.Md", "Anna Theresia Simatupang, S.Sos", "Desi Suriani Pasaribu, S.E", "Rindu Fatmawaty, S.H", "Gerhanawati, S.E", "Ismail Marzuki, S.Sos", "Ronny Ferdian, S.E", "Safran Nuh Nasution, S.T", "M.Khalis Pasaribu, S.Ikom", "Eko Putra Hutabarat, A.Md", "Ahmad Ridho Siregar, A.Md.T", "Ahlis Jami'ah Damanik, A.Md.Kom", "Deliana Nasution", "Widya Sartika Nasution", "Paulus Hadi", "Ahmad Ferdian", "Anhar Rianto Pasaribu", "Deny Siahaan", "Abdul Jalil", "Dedi Hariadi", "Edi Suheri", "Muafdan Jega", "Joyful Rom Sihotang", "James Fransiskus", "Jonni Sihombing", "Martha Monica Putri Siahaan, S.T", "Erni Sasmita, S.E", "Wilson Pangihutan Siregar", "Welly Boy Simatupang, S.E", "Eva Meylina Siahaan", "Flora Susanti Lumbantobing", "Ester Tampubolon", "Bernard Adi Saputra Saragih", "Felix Simatupang", "Mukhtadinul Ikhsan", "Halasson Siahaan", "Mahar Yusuf Sinaga", "Irfan Sihotang", "Rizky Ramadhan Piliang", "Andrian Mendrofa"];
 
@@ -90,6 +90,27 @@
       }
       return data;
     };
+    
+    // Modal kustom untuk konfirmasi
+    function ConfirmModal({ title, message, onConfirm, onCancel }) {
+        useEffect(() => { lucide.createIcons(); });
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm">
+                    <h3 className="text-xl font-bold mb-4 text-gray-800">{title}</h3>
+                    <p className="text-gray-600 mb-6">{message}</p>
+                    <div className="flex justify-end space-x-4">
+                        <button onClick={onCancel} className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg font-semibold hover:bg-gray-300 transition">
+                            Batal
+                        </button>
+                        <button onClick={onConfirm} className="px-4 py-2 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition">
+                            Hapus
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
 
     function Header({ currentTime }) {
@@ -175,6 +196,7 @@
       const [isSaving, setIsSaving] = useState({});
       const [showFlow, setShowFlow] = useState(false);
       const [showCalendar, setShowCalendar] = useState(false);
+      const [showModal, setShowModal] = useState(null);
 
       useEffect(() => { lucide.createIcons(); });
 
@@ -194,42 +216,38 @@
         return () => stop();
       }, []);
 
-      useEffect(() => {
+      // Logika sinkronisasi awal yang sama
+      const syncInitialEmployees = async () => {
         const db = firebase.firestore();
         const ref = db.collection(`artifacts/${appId}/public/data/employees`);
-
-        const ensureSeed = async () => {
-          const snap = await ref.get();
-          if (snap.empty) {
+        try {
+          const snapshot = await ref.get();
+          const existingNames = new Set(snapshot.docs.map(doc => doc.data().name));
+          
+          const newEmployees = initialEmployees.filter(name => !existingNames.has(name));
+          
+          if (newEmployees.length > 0) {
             const batch = db.batch();
-            initialEmployees.forEach(name => {
+            newEmployees.forEach(name => {
               const docRef = ref.doc();
               batch.set(docRef, {
                 name,
-                leaves: { annual:0, long:0, sick:0, maternity:0, important:0, outside:0 }
+                leaves: { annual:{count:0, note:''}, long:{count:0, note:''}, sick:{count:0, note:''}, maternity:{count:0, note:''}, important:{count:0, note:''}, outside:{count:0, note:''} }
               });
             });
             await batch.commit();
+            console.log("Data pegawai awal disinkronkan. Tidak ada duplikasi.");
+            setMessage({ text: "Data pegawai awal telah disinkronkan dan tidak ada duplikasi.", type: "success" });
           }
-        };
+        } catch (error) {
+          console.error("Gagal sinkronisasi data pegawai:", error);
+          setMessage({ text: "Gagal sinkronisasi data pegawai. Silakan muat ulang halaman.", type: "error" });
+        }
+      };
 
-        ensureSeed().catch(console.error);
-
-        const unsub = ref.onSnapshot(snap => {
-          const arr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-          setEmployees(arr);
-          if (!selectedEmployee && arr.length) setSelectedEmployee(arr[0]);
-        }, err => {
-          console.error(err);
-          setMessage({ text: "Gagal memuat data cuti.", type: "error" });
-        });
-        return () => unsub();
-      }, []);
-
-      useEffect(() => {
+      const syncInitialQuotas = async () => {
         const db = firebase.firestore();
         const ref = db.collection(`artifacts/${appId}/public/data/leaveQuotas`);
-
         const initialQuotas = [
           { type: 'Cuti Tahunan', quota: '12 hari', order: 1 },
           { type: 'Cuti Besar', quota: '3 bulan', order: 2 },
@@ -239,30 +257,60 @@
           { type: 'Cuti Diluar Tanggungan Negara', quota: '3 tahun', order: 6 },
           { type: 'Cuti Bersama', quota: '7 hari', note: 'sewaktu-waktu dapat berubah', order: 7 },
         ];
-
-        const ensureSeed = async () => {
-          const snap = await ref.get();
-          if (snap.empty) {
+        
+        try {
+          const snapshot = await ref.get();
+          const existingTypes = new Set(snapshot.docs.map(doc => doc.data().type));
+          
+          const newQuotas = initialQuotas.filter(quota => !existingTypes.has(quota.type));
+          
+          if (newQuotas.length > 0) {
             const batch = db.batch();
-            initialQuotas.forEach(q => {
+            newQuotas.forEach(q => {
               const docRef = ref.doc();
               batch.set(docRef, q);
             });
             await batch.commit();
+            console.log("Data kuota cuti awal disinkronkan. Tidak ada duplikasi.");
+            setMessage({ text: "Data kuota cuti awal telah disinkronkan dan tidak ada duplikasi.", type: "success" });
           }
-        };
+        } catch (error) {
+          console.error("Gagal sinkronisasi kuota cuti:", error);
+          setMessage({ text: "Gagal sinkronisasi kuota cuti. Silakan muat ulang halaman.", type: "error" });
+        }
+      };
 
-        ensureSeed().catch(console.error);
+      useEffect(() => {
+        if (userId) {
+          syncInitialEmployees();
+          syncInitialQuotas();
 
-        const unsub = ref.orderBy('order').onSnapshot(snap => {
-          const arr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-          setLeaveQuotas(arr);
-        }, err => {
-          console.error(err);
-          setMessage({ text: "Gagal memuat kuota cuti.", type: "error" });
-        });
-        return () => unsub();
-      }, []);
+          // Menyiapkan listener real-time untuk pegawai
+          const db = firebase.firestore();
+          const unsubEmployees = db.collection(`artifacts/${appId}/public/data/employees`).onSnapshot(snap => {
+            const arr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setEmployees(arr);
+            if (!selectedEmployee && arr.length) setSelectedEmployee(arr[0]);
+          }, err => {
+            console.error(err);
+            setMessage({ text: "Gagal memuat data cuti.", type: "error" });
+          });
+
+          // Menyiapkan listener real-time untuk kuota cuti
+          const unsubQuotas = db.collection(`artifacts/${appId}/public/data/leaveQuotas`).orderBy('order').onSnapshot(snap => {
+            const arr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setLeaveQuotas(arr);
+          }, err => {
+            console.error(err);
+            setMessage({ text: "Gagal memuat kuota cuti.", type: "error" });
+          });
+
+          return () => {
+            unsubEmployees();
+            unsubQuotas();
+          };
+        }
+      }, [userId]);
       
       const filtered = React.useMemo(
         () => employees.filter(e => e.name.toLowerCase().includes((searchQuery||'').toLowerCase())),
@@ -292,7 +340,17 @@
         setIsSaving(s => ({ ...s, [empId]: true }));
         const db = firebase.firestore();
         const emp = employees.find(e => e.id === empId);
-        const newLeaves = { ...emp.leaves, ...(editData[empId] || {}) };
+        
+        // Buat objek leaves yang diperbarui, pastikan struktur {count, note}
+        const newLeaves = { ...emp.leaves };
+        for (const type of leaveTypes) {
+          const key = type.key;
+          newLeaves[key] = {
+            count: (editData[empId] && editData[empId][key]?.count) ?? emp.leaves[key]?.count ?? 0,
+            note: (editData[empId] && editData[empId][t.key]?.note) ?? emp.leaves[key]?.note ?? '',
+          };
+        }
+
         try {
           await db.collection(`artifacts/${appId}/public/data/employees`).doc(empId).set({
             ...emp, leaves: newLeaves
@@ -319,7 +377,7 @@
       };
       
       const deleteQuota = async (id) => {
-        if (!confirm("Hapus jenis cuti ini?")) return;
+        setShowModal(null); // Tutup modal
         try {
             const db = firebase.firestore();
             await db.collection(`artifacts/${appId}/public/data/leaveQuotas`).doc(id).delete();
@@ -330,14 +388,29 @@
         }
       };
 
+      // ** PERBAIKAN: Validasi duplikasi sebelum menambahkan pegawai baru **
       const addEmployee = async (name) => {
         const nm = (name||'').trim();
-        if (!nm) return;
+        if (!nm) {
+          setMessage({ text: "Nama pegawai tidak boleh kosong.", type: "error" });
+          return;
+        }
+
         const db = firebase.firestore();
         try {
+          // Cek apakah nama sudah ada
+          const q = db.collection(`artifacts/${appId}/public/data/employees`).where('name', '==', nm);
+          const snapshot = await q.get();
+
+          if (!snapshot.empty) {
+            setMessage({ text: "Pegawai dengan nama ini sudah ada.", type: "error" });
+            return;
+          }
+
+          // Jika tidak ada, tambahkan pegawai baru
           await db.collection(`artifacts/${appId}/public/data/employees`).add({
             name: nm,
-            leaves: { annual:0, long:0, sick:0, maternity:0, important:0, outside:0 }
+            leaves: { annual:{count:0, note:''}, long:{count:0, note:''}, sick:{count:0, note:''}, maternity:{count:0, note:''}, important:{count:0, note:''}, outside:{count:0, note:''} }
           });
           setMessage({ text: "Pegawai ditambahkan.", type: "success" });
         } catch (error) {
@@ -347,7 +420,7 @@
       };
 
       const deleteEmployee = async (emp) => {
-        if (!confirm(`Hapus pegawai: ${emp.name}?`)) return;
+        setShowModal(null); // Tutup modal
         const db = firebase.firestore();
         try {
           await db.collection(`artifacts/${appId}/public/data/employees`).doc(emp.id).delete();
@@ -358,11 +431,28 @@
         }
       };
 
+      // ** PERBAIKAN: Validasi duplikasi saat mengedit nama pegawai **
       const updateName = async (empId, newName) => {
         const nm = (newName||'').trim();
-        if (!nm) return;
+        if (!nm) {
+           setMessage({ text: "Nama tidak boleh kosong.", type: "error" });
+           return;
+        }
+
         const db = firebase.firestore();
         try {
+          // Cek apakah nama baru sudah ada pada pegawai lain
+          const q = db.collection(`artifacts/${appId}/public/data/employees`).where('name', '==', nm);
+          const snapshot = await q.get();
+          
+          if (!snapshot.empty) {
+              const existingDoc = snapshot.docs[0];
+              if (existingDoc.id !== empId) {
+                  setMessage({ text: "Nama ini sudah digunakan oleh pegawai lain.", type: "error" });
+                  return;
+              }
+          }
+
           await db.collection(`artifacts/${appId}/public/data/employees`).doc(empId).set({ name: nm }, { merge: true });
           setMessage({ text: "Nama diperbarui.", type: "success" });
         } catch (error) {
@@ -381,6 +471,14 @@
       return (
         <div className="max-w-7xl mx-auto p-4">
           <Header currentTime={currentTime} />
+          {showModal && (
+              <ConfirmModal 
+                  title={showModal.title} 
+                  message={showModal.message} 
+                  onConfirm={showModal.onConfirm} 
+                  onCancel={() => setShowModal(null)} 
+              />
+          )}
 
           {message.text && (
             <div className={`p-4 mb-4 text-white rounded-lg shadow-md flex items-center justify-between ${message.type==='success'?'bg-green-500':'bg-red-500'}`}>
@@ -412,7 +510,8 @@
           {isAdmin ? (
             <AdminPanel employees={employees} leaveTypes={leaveTypes} leaveQuotas={leaveQuotas} editData={editData} setEditData={setEditData}
                         saveLeaves={saveLeaves} updateQuota={updateQuota} deleteQuota={deleteQuota}
-                        addEmployee={addEmployee} deleteEmployee={deleteEmployee} updateName={updateName} isSaving={isSaving} setMessage={setMessage} />
+                        addEmployee={addEmployee} deleteEmployee={deleteEmployee} updateName={updateName} isSaving={isSaving} setMessage={setMessage}
+                        setShowModal={setShowModal} />
           ) : (
             <UserPanel employees={employees} selectedEmployee={selectedEmployee} setSelectedEmployee={setSelectedEmployee}
                         leaveTypes={leaveTypes} leaveQuotas={leaveQuotas} searchQuery={searchQuery} setSearchQuery={setSearchQuery}
@@ -422,7 +521,7 @@
       );
     }
 
-    function AdminPanel({ employees, leaveTypes, leaveQuotas, editData, setEditData, saveLeaves, addEmployee, deleteEmployee, updateName, isSaving, updateQuota, deleteQuota, setMessage }) {
+    function AdminPanel({ employees, leaveTypes, leaveQuotas, editData, setEditData, saveLeaves, addEmployee, deleteEmployee, updateName, isSaving, updateQuota, deleteQuota, setMessage, setShowModal }) {
       const [newName, setNewName] = useState('');
       const [editing, setEditing] = useState(null);
       const [editingName, setEditingName] = useState('');
@@ -437,29 +536,46 @@
 
       useEffect(() => { lucide.createIcons(); });
       
-      // Menggunakan try/catch langsung di sini untuk penanganan error yang lebih baik
+      // ** PERBAIKAN: Validasi duplikasi sebelum menambahkan kuota cuti baru **
       const handleAddQuota = async (e) => {
         e.preventDefault();
-        if (newQuotaType && newQuotaValue) {
-          setIsAddingQuota(true);
-          const db = firebase.firestore();
-          const ref = db.collection(`artifacts/${appId}/public/data/leaveQuotas`);
-          try {
-            const newOrder = leaveQuotas.length > 0 ? Math.max(...leaveQuotas.map(q => q.order || 0)) + 1 : 1;
-            await ref.add({
-              type: newQuotaType,
-              quota: newQuotaValue,
-              order: newOrder,
-            });
-            setMessage({ text: "Kuota cuti baru berhasil ditambahkan.", type: "success" });
-            setNewQuotaType('');
-            setNewQuotaValue('');
-          } catch (error) {
-            console.error("Gagal menambahkan kuota cuti:", error);
-            setMessage({ text: "Gagal menambahkan kuota cuti. Coba lagi.", type: "error" });
-          } finally {
+        const qt = (newQuotaType || '').trim();
+        const qv = (newQuotaValue || '').trim();
+        
+        if (!qt || !qv) {
+          setMessage({ text: "Jenis dan kuota cuti tidak boleh kosong.", type: "error" });
+          return;
+        }
+
+        setIsAddingQuota(true);
+        const db = firebase.firestore();
+        const ref = db.collection(`artifacts/${appId}/public/data/leaveQuotas`);
+        
+        try {
+          // Cek apakah jenis cuti sudah ada
+          const q = db.collection(`artifacts/${appId}/public/data/leaveQuotas`).where('type', '==', qt);
+          const snapshot = await q.get();
+
+          if (!snapshot.empty) {
+            setMessage({ text: "Jenis cuti ini sudah ada.", type: "error" });
             setIsAddingQuota(false);
+            return;
           }
+
+          const newOrder = leaveQuotas.length > 0 ? Math.max(...leaveQuotas.map(q => q.order || 0)) + 1 : 1;
+          await ref.add({
+            type: qt,
+            quota: qv,
+            order: newOrder,
+          });
+          setMessage({ text: "Kuota cuti baru berhasil ditambahkan.", type: "success" });
+          setNewQuotaType('');
+          setNewQuotaValue('');
+        } catch (error) {
+          console.error("Gagal menambahkan kuota cuti:", error);
+          setMessage({ text: "Gagal menambahkan kuota cuti. Coba lagi.", type: "error" });
+        } finally {
+          setIsAddingQuota(false);
         }
       };
 
@@ -484,8 +600,20 @@
         setEditingQuotaValue('');
       };
       
-      const handleQuotaDelete = async (id) => {
-          await deleteQuota(id);
+      const handleQuotaDelete = (id) => {
+          setShowModal({
+              title: "Hapus Jenis Cuti",
+              message: "Apakah Anda yakin ingin menghapus jenis cuti ini?",
+              onConfirm: () => deleteQuota(id)
+          });
+      };
+      
+      const handleEmployeeDelete = (emp) => {
+          setShowModal({
+              title: "Hapus Pegawai",
+              message: `Apakah Anda yakin ingin menghapus pegawai: ${emp.name}?`,
+              onConfirm: () => deleteEmployee(emp)
+          });
       };
 
       return (
@@ -588,10 +716,17 @@
                     <div key={t.key} className="flex flex-col">
                       <label className="text-gray-600 font-medium mb-1">{t.label}:</label>
                       <input type="number"
-                        value={ (editData[emp.id] && editData[emp.id][t.key]) ?? emp.leaves[t.key] ?? 0 }
-                        onChange={e=>setEditData(prev=>({ ...prev, [emp.id]: { ...(prev[emp.id]||{}), [t.key]: Number(e.target.value) } }))}
+                        value={ (editData[emp.id] && editData[emp.id][t.key]?.count) ?? emp.leaves[t.key]?.count ?? 0 }
+                        onChange={e=>setEditData(prev=>({ ...prev, [emp.id]: { ...(prev[emp.id]||{}), [t.key]: { ...(prev[emp.id]?.[t.key]||{}), count: Number(e.target.value) } } }))}
                         className="w-full p-2 border border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none"
                       />
+                       <label className="text-gray-600 font-medium mt-2 mb-1">Catatan:</label>
+                       <textarea
+                            value={ (editData[emp.id] && editData[emp.id][t.key]?.note) ?? emp.leaves[t.key]?.note ?? '' }
+                            onChange={e=>setEditData(prev=>({ ...prev, [emp.id]: { ...(prev[emp.id]||{}), [t.key]: { ...(prev[emp.id]?.[t.key]||{}), note: e.target.value } } }))}
+                            placeholder="Tambahkan catatan di sini..."
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none text-xs"
+                       ></textarea>
                     </div>
                   ))}
                 </div>
@@ -599,7 +734,7 @@
                   <button onClick={()=>saveLeaves(emp.id)} className={`flex-1 px-4 py-2 text-white font-bold rounded-full shadow ${isSaving[emp.id]?'bg-gray-400':'bg-green-500 hover:bg-green-600'}`}>
                     {isSaving[emp.id] ? 'Menyimpan…' : 'Simpan'}
                   </button>
-                  <button onClick={()=>deleteEmployee(emp)} className="flex-1 px-4 py-2 bg-red-500 text-white font-bold rounded-full hover:bg-red-600 shadow">
+                  <button onClick={()=>handleEmployeeDelete(emp)} className="flex-1 px-4 py-2 bg-red-500 text-white font-bold rounded-full hover:bg-red-600 shadow">
                     Hapus
                   </button>
                 </div>
@@ -727,9 +862,14 @@
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {leaveTypes.map(t => (
-                      <div key={t.key} className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
-                        <span className="font-medium">{t.label}:</span>
-                        <span className="text-2xl font-bold text-green-600">{selectedEmployee?.leaves?.[t.key] || 0}</span>
+                      <div key={t.key} className="flex flex-col justify-between items-start bg-white p-3 rounded-lg shadow-sm">
+                        <div className="flex justify-between items-center w-full">
+                          <span className="font-medium">{t.label}:</span>
+                          <span className="text-2xl font-bold text-green-600">{selectedEmployee?.leaves?.[t.key]?.count || 0}</span>
+                        </div>
+                        {selectedEmployee?.leaves?.[t.key]?.note && (
+                            <p className="text-xs italic text-gray-500 mt-1">{selectedEmployee.leaves[t.key].note}</p>
+                        )}
                       </div>
                     ))}
                   </div>
