@@ -334,13 +334,14 @@
       const saveLeaves = async (empId) => {
         setIsSaving(s => ({ ...s, [empId]: true }));
         const emp = employees.find(e => e.id === empId);
-        // Pastikan editData memiliki struktur notes
-        const newLeaves = { 
-            ...emp.leaves, 
-            ...(editData[empId] || {}),
+        
+        // Perbaikan: Gunakan optional chaining untuk memastikan emp.leaves ada sebelum di-spread
+        const newLeaves = {
+            ...(emp.leaves || {}), 
+            ...(editData[empId]?.leaves || {}),
             notes: {
                 ...(emp.leaves?.notes || {}),
-                ...(editData[empId]?.notes || {})
+                ...(editData[empId]?.leaves?.notes || {})
             }
         };
 
