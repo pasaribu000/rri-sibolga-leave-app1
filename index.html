@@ -42,7 +42,11 @@
     // App constants
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
     const correctAdminPassword = "rriadmin2025";
-    const initialEmployees = ["Yanni Peter Latuheru, S.Sos", "Ichwansyah Pohan, S.E", "Rosmawan Hutabarat, S.E", "Viktor Hamonangan Hutabarat", "Khairil", "Vivi Tri Doharny Daulay", "Diskatarisa Hutabarat", "Novita Sari Putri S.E", "Silverius Hamonangan P. Purba, S.Sos", "Frans Martuani Sinaga, S.M", "Ade Wulan Septyaningsih, S.IP", "Nurhamni Ichwarti, S.Sos", "Citra Priadi Pasaribu, S.IP", "Azis Fahri Tanjung, S.Kom", "Annisa Lestari Nasution, A.Md.Ak", "Putri Andriani, A.Md.Ak", "Mahani Aprilia, A.Md.Ak", "Idola Pratiwi Sinaga, A.md.Pjk", "Ray Wiranta, A.Md.A.B", "Indah Farima Putri, A.Md", "Hans Pierre Sitohang, A.Md", "Sopiah Hasibuan, A.Md", "Aziziah khurfatul Janah, A.Md.Ds", "Astrid khairani Sinaga, A.Md", "Intan Friskila hondro, A.Md", "Anna Theresia Simatupang, S.Sos", "Desi Suriani Pasaribu, S.E", "Rindu Fatmawaty, S.H", "Gerhanawati, S.E", "Ismail Marzuki, S.Sos", "Ronny Ferdian, S.E", "Safran Nuh Nasution, S.T", "M.Khalis Pasaribu, S.Ikom", "Eko Putra Hutabarat, A.Md", "Ahmad Ridho Siregar, A.Md.T", "Ahlis Jami'ah Damanik, A.Md.Kom", "Deliana Nasution", "Widya Sartika Nasution", "Paulus Hadi", "Ahmad Ferdian", "Anhar Rianto Pasaribu", "Deny Siahaan", "Abdul Jalil", "Dedi Hariadi", "Edi Suheri", "Muafdan Jega", "Joyful Rom Sihotang", "James Fransiskus", "Jonni Sihombing", "Martha Monica Putri Siahaan, S.T", "Erni Sasmita, S.E", "Wilson Pangihutan Siregar", "Welly Boy Simatupang, S.E", "Eva Meylina Siahaan", "Flora Susanti Lumbantobing", "Ester Tampubolon", "Bernard Adi Saputra Saragih", "Felix Simatupang", "Mukhtadinul Ikhsan", "Halasson Siahaan", "Mahar Yusuf Sinaga", "Irfan Sihotang", "Rizky Ramadhan Piliang", "Andrian Mendrofa"];
+    
+    // ** PERBAIKAN: Menghapus duplikasi dari array awal **
+    const initialEmployees = [...new Set([
+      "Yanni Peter Latuheru, S.Sos", "Ichwansyah Pohan, S.E", "Rosmawan Hutabarat, S.E", "Viktor Hamonangan Hutabarat", "Khairil", "Vivi Tri Doharny Daulay", "Diskatarisa Hutabarat", "Novita Sari Putri S.E", "Silverius Hamonangan P. Purba, S.Sos", "Frans Martuani Sinaga, S.M", "Ade Wulan Septyaningsih, S.IP", "Nurhamni Ichwarti, S.Sos", "Citra Priadi Pasaribu, S.IP", "Azis Fahri Tanjung, S.Kom", "Annisa Lestari Nasution, A.Md.Ak", "Putri Andriani, A.Md.Ak", "Mahani Aprilia, A.Md.Ak", "Idola Pratiwi Sinaga, A.md.Pjk", "Ray Wiranta, A.Md.A.B", "Indah Farima Putri, A.Md", "Hans Pierre Sitohang, A.Md", "Sopiah Hasibuan, A.Md", "Aziziah khurfatul Janah, A.Md.Ds", "Astrid khairani Sinaga, A.Md", "Intan Friskila hondro, A.Md", "Anna Theresia Simatupang, S.Sos", "Desi Suriani Pasaribu, S.E", "Rindu Fatmawaty, S.H", "Gerhanawati, S.E", "Ismail Marzuki, S.Sos", "Ronny Ferdian, S.E", "Safran Nuh Nasution, S.T", "M.Khalis Pasaribu, S.Ikom", "Eko Putra Hutabarat, A.Md", "Ahmad Ridho Siregar, A.Md.T", "Ahlis Jami'ah Damanik, A.Md.Kom", "Deliana Nasution", "Widya Sartika Nasution", "Paulus Hadi", "Ahmad Ferdian", "Anhar Rianto Pasaribu", "Deny Siahaan", "Abdul Jalil", "Dedi Hariadi", "Edi Suheri", "Muafdan Jega", "Joyful Rom Sihotang", "James Fransiskus", "Jonni Sihombing", "Martha Monica Putri Siahaan, S.T", "Erni Sasmita, S.E", "Wilson Pangihutan Siregar", "Welly Boy Simatupang, S.E", "Eva Meylina Siahaan", "Flora Susanti Lumbantobing", "Ester Tampubolon", "Bernard Adi Saputra Saragih", "Felix Simatupang", "Mukhtadinul Ikhsan", "Halasson Siahaan", "Mahar Yusuf Sinaga", "Irfan Sihotang", "Rizky Ramadhan Piliang", "Andrian Mendrofa"
+    ])];
 
     const leaveTypes = [
       { key: 'annual', label: 'Cuti Tahunan Terpakai' },
@@ -53,6 +57,17 @@
       { key: 'outside', label: 'Cuti Di Luar Tanggungan Terpakai' },
     ];
     
+    // ** PERBAIKAN: Menghapus duplikasi dari array awal **
+    const initialQuotas = [...new Map([
+      { type: 'Cuti Tahunan', quota: '12 hari', order: 1 },
+      { type: 'Cuti Besar', quota: '3 bulan', order: 2 },
+      { type: 'Cuti Sakit', quota: '14 hari', order: 3 },
+      { type: 'Cuti Melahirkan', quota: '3 bulan', order: 4 },
+      { type: 'Cuti Karena Alasan Penting', quota: '1 bulan', order: 5 },
+      { type: 'Cuti Diluar Tanggungan Negara', quota: '3 tahun', order: 6 },
+      { type: 'Cuti Bersama', quota: '7 hari', note: 'sewaktu-waktu dapat berubah', order: 7 },
+    ].map(item => [item.type, item])).values()];
+
     const parseCSV = (csv) => {
       const lines = csv.split('\n');
       const headers = ['Timestamp', 'Nama Pegawai', 'Jenis Cuti', 'Tanggal Mulai Cuti', 'Tanggal Selesai Cuti', 'Unggah Berkas Persyaratan', 'Alamat Email Pegawai'];
@@ -216,7 +231,7 @@
         return () => stop();
       }, []);
 
-      // Logika sinkronisasi awal yang sama
+      // Logika sinkronisasi awal yang diperbaiki
       const syncInitialEmployees = async () => {
         const db = firebase.firestore();
         const ref = db.collection(`artifacts/${appId}/public/data/employees`);
@@ -248,15 +263,6 @@
       const syncInitialQuotas = async () => {
         const db = firebase.firestore();
         const ref = db.collection(`artifacts/${appId}/public/data/leaveQuotas`);
-        const initialQuotas = [
-          { type: 'Cuti Tahunan', quota: '12 hari', order: 1 },
-          { type: 'Cuti Besar', quota: '3 bulan', order: 2 },
-          { type: 'Cuti Sakit', quota: '14 hari', order: 3 },
-          { type: 'Cuti Melahirkan', quota: '3 bulan', order: 4 },
-          { type: 'Cuti Karena Alasan Penting', quota: '1 bulan', order: 5 },
-          { type: 'Cuti Diluar Tanggungan Negara', quota: '3 tahun', order: 6 },
-          { type: 'Cuti Bersama', quota: '7 hari', note: 'sewaktu-waktu dapat berubah', order: 7 },
-        ];
         
         try {
           const snapshot = await ref.get();
@@ -346,7 +352,7 @@
         for (const type of leaveTypes) {
           const key = type.key;
           newLeaves[key] = {
-            count: (editData[empId] && editData[empId][key]?.count) ?? emp.leaves[key]?.count ?? 0,
+            count: (editData[empId] && editData[empId][t.key]?.count) ?? emp.leaves[key]?.count ?? 0,
             note: (editData[empId] && editData[empId][t.key]?.note) ?? emp.leaves[key]?.note ?? '',
           };
         }
@@ -388,7 +394,7 @@
         }
       };
 
-      // ** PERBAIKAN: Validasi duplikasi sebelum menambahkan pegawai baru **
+      // ** Validasi duplikasi sebelum menambahkan pegawai baru **
       const addEmployee = async (name) => {
         const nm = (name||'').trim();
         if (!nm) {
@@ -431,7 +437,7 @@
         }
       };
 
-      // ** PERBAIKAN: Validasi duplikasi saat mengedit nama pegawai **
+      // ** Validasi duplikasi saat mengedit nama pegawai **
       const updateName = async (empId, newName) => {
         const nm = (newName||'').trim();
         if (!nm) {
@@ -536,7 +542,7 @@
 
       useEffect(() => { lucide.createIcons(); });
       
-      // ** PERBAIKAN: Validasi duplikasi sebelum menambahkan kuota cuti baru **
+      // ** Validasi duplikasi sebelum menambahkan kuota cuti baru **
       const handleAddQuota = async (e) => {
         e.preventDefault();
         const qt = (newQuotaType || '').trim();
