@@ -20,18 +20,13 @@
   <style>
     /* Prevent FOUC for lucide icons */
     i[data-lucide] { display: inline-block; vertical-align: middle; }
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #f3f4f6;
-    }
   </style>
 </head>
-<body class="bg-gradient-to-br from-blue-100 to-indigo-200 min-h-screen antialiased flex items-center justify-center p-4">
-  <div id="root" class="w-full max-w-2xl mx-auto my-8"></div>
+<body class="bg-gradient-to-br from-blue-100 to-indigo-200 min-h-screen antialiased">
+  <div id="root"></div>
 
   <script type="text/babel">
     const { useEffect, useMemo, useState, useRef } = React;
-    const { createRoot } = ReactDOM;
 
     // ====== Firebase Config (SAMA seperti file Anda) ======
     const firebaseConfig = {
@@ -44,7 +39,8 @@
       measurementId: "G-BENDLYTZ2Z"
     };
 
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    // App constants
+    const appId = "default-app-id";
     const correctAdminPassword = "rriadmin2025";
     const initialEmployees = ["Yanni Peter Latuheru, S.Sos", "Ichwansyah Pohan, S.E", "Rosmawan Hutabarat, S.E", "Viktor Hamonangan Hutabarat", "Khairil", "Vivi Tri Doharny Daulay", "Diskatarisa Hutabarat", "Novita Sari Putri S.E", "Silverius Hamonangan P. Purba, S.Sos", "Frans Martuani Sinaga, S.M", "Ade Wulan Septyaningsih, S.IP", "Nurhamni Ichwarti, S.Sos", "Citra Priadi Pasaribu, S.IP", "Azis Fahri Tanjung, S.Kom", "Annisa Lestari Nasution, A.Md.Ak", "Putri Andriani, A.Md.Ak", "Mahani Aprilia, A.Md.Ak", "Idola Pratiwi Sinaga, A.md.Pjk", "Ray Wiranta, A.Md.A.B", "Indah Farima Putri, A.Md", "Hans Pierre Sitohang, A.Md", "Sopiah Hasibuan, A.Md", "Aziziah khurfatul Janah, A.Md.Ds", "Astrid khairani Sinaga, A.Md", "Intan Friskila hondro, A.Md", "Anna Theresia Simatupang, S.Sos", "Desi Suriani Pasaribu, S.E", "Rindu Fatmawaty, S.H", "Gerhanawati, S.E", "Ismail Marzuki, S.Sos", "Ronny Ferdian, S.E", "Safran Nuh Nasution, S.T", "M.Khalis Pasaribu, S.Ikom", "Eko Putra Hutabarat, A.Md", "Ahmad Ridho Siregar, A.Md.T", "Ahlis Jami'ah Damanik, A.Md.Kom", "Deliana Nasution", "Widya Sartika Nasution", "Paulus Hadi", "Ahmad Ferdian", "Anhar Rianto Pasaribu", "Deny Siahaan", "Abdul Jalil", "Dedi Hariadi", "Edi Suheri", "Muafdan Jega", "Joyful Rom Sihotang", "James Fransiskus", "Jonni Sihombing", "Martha Monica Putri Siahaan, S.T", "Erni Sasmita, S.E", "Wilson Pangihutan Siregar", "Welly Boy Simatupang, S.E", "Eva Meylina Siahaan", "Flora Susanti Lumbantobing", "Ester Tampubolon", "Bernard Adi Saputra Saragih", "Felix Simatupang", "Mukhtadinul Ikhsan", "Halasson Siahaan", "Mahar Yusuf Sinaga", "Irfan Sihotang", "Rizky Ramadhan Piliang", "Andrian Mendrofa"];
 
@@ -57,7 +53,6 @@
       { key: 'outside', label: 'Cuti Di Luar Tanggungan Terpakai' },
     ];
     
-    // Fungsi untuk menguraikan data CSV, tidak diubah
     const parseCSV = (csv) => {
       const lines = csv.split('\n');
       const headers = ['Timestamp', 'Nama Pegawai', 'Jenis Cuti', 'Tanggal Mulai Cuti', 'Tanggal Selesai Cuti', 'Unggah Berkas Persyaratan', 'Alamat Email Pegawai'];
@@ -96,7 +91,7 @@
       return data;
     };
 
-    // Komponen Header, tidak diubah
+
     function Header({ currentTime }) {
       useEffect(() => { lucide.createIcons(); });
       return (
@@ -117,7 +112,6 @@
       );
     }
 
-    // Komponen Kalender, tidak diubah
     function Calendar({ onClose }) {
       const [currentMonth, setCurrentMonth] = useState(new Date());
       const daysInMonth = useMemo(() => {
@@ -164,8 +158,7 @@
         </div>
       );
     }
-    
-    // Komponen utama aplikasi
+
     function App() {
       const [currentTime, setCurrentTime] = useState(new Date());
       const [isLoading, setIsLoading] = useState(true);
@@ -182,37 +175,26 @@
       const [isSaving, setIsSaving] = useState({});
       const [showFlow, setShowFlow] = useState(false);
       const [showCalendar, setShowCalendar] = useState(false);
-      const [showForm, setShowForm] = useState(false);
-      const [showConfirmation, setShowConfirmation] = useState(false);
 
       useEffect(() => { lucide.createIcons(); });
 
-      // Effect untuk memperbarui waktu
       useEffect(() => {
         const t = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => clearInterval(t);
       }, []);
 
-      // Effect untuk otentikasi Firebase
       useEffect(() => {
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
-        const stop = firebase.onAuthStateChanged(auth, u => {
+        auth.signInAnonymously().catch(console.error);
+        const stop = auth.onAuthStateChanged(u => {
           setUserId(u ? u.uid : null);
           setIsLoading(false);
         });
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-        if (initialAuthToken) {
-          firebase.signInWithCustomToken(auth, initialAuthToken);
-        } else {
-          firebase.signInAnonymously(auth);
-        }
         return () => stop();
       }, []);
 
-      // Effect untuk mengambil data pegawai
       useEffect(() => {
-        if (!userId) return;
         const db = firebase.firestore();
         const ref = db.collection(`artifacts/${appId}/public/data/employees`);
 
@@ -242,21 +224,19 @@
           setMessage({ text: "Gagal memuat data cuti.", type: "error" });
         });
         return () => unsub();
-      }, [userId]);
+      }, []);
 
-      // Effect untuk mengambil data kuota cuti
       useEffect(() => {
-        if (!userId) return;
         const db = firebase.firestore();
         const ref = db.collection(`artifacts/${appId}/public/data/leaveQuotas`);
 
         const initialQuotas = [
-          { type: 'Cuti Tahunan', quota: '12 hari', order: 1, note: '' },
-          { type: 'Cuti Besar', quota: '3 bulan', order: 2, note: '' },
-          { type: 'Cuti Sakit', quota: '14 hari', order: 3, note: '' },
-          { type: 'Cuti Melahirkan', quota: '3 bulan', order: 4, note: '' },
-          { type: 'Cuti Karena Alasan Penting', quota: '1 bulan', order: 5, note: '' },
-          { type: 'Cuti Diluar Tanggungan Negara', quota: '3 tahun', order: 6, note: '' },
+          { type: 'Cuti Tahunan', quota: '12 hari', order: 1 },
+          { type: 'Cuti Besar', quota: '3 bulan', order: 2 },
+          { type: 'Cuti Sakit', quota: '14 hari', order: 3 },
+          { type: 'Cuti Melahirkan', quota: '3 bulan', order: 4 },
+          { type: 'Cuti Karena Alasan Penting', quota: '1 bulan', order: 5 },
+          { type: 'Cuti Diluar Tanggungan Negara', quota: '3 tahun', order: 6 },
           { type: 'Cuti Bersama', quota: '7 hari', note: 'sewaktu-waktu dapat berubah', order: 7 },
         ];
 
@@ -274,7 +254,7 @@
 
         ensureSeed().catch(console.error);
 
-        const unsub = ref.onSnapshot(snap => {
+        const unsub = ref.orderBy('order').onSnapshot(snap => {
           const arr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
           setLeaveQuotas(arr);
         }, err => {
@@ -282,9 +262,9 @@
           setMessage({ text: "Gagal memuat kuota cuti.", type: "error" });
         });
         return () => unsub();
-      }, [userId]);
-
-      const filtered = useMemo(
+      }, []);
+      
+      const filtered = React.useMemo(
         () => employees.filter(e => e.name.toLowerCase().includes((searchQuery||'').toLowerCase())),
         [employees, searchQuery]
       );
@@ -314,16 +294,19 @@
         const emp = employees.find(e => e.id === empId);
         const newLeaves = { ...emp.leaves, ...(editData[empId] || {}) };
         try {
-          await db.collection(`artifacts/${appId}/public/data/employees`).doc(empId).set({ ...emp, leaves: newLeaves }, { merge: true });
+          await db.collection(`artifacts/${appId}/public/data/employees`).doc(empId).set({
+            ...emp, leaves: newLeaves
+          }, { merge: true });
           setMessage({ text: "Data cuti disimpan.", type: "success" });
         } catch (error) {
+            // Tampilkan error ke pengguna
           console.error("Gagal menyimpan data cuti pegawai:", error);
           setMessage({ text: "Gagal menyimpan data cuti. Coba lagi.", type: "error" });
         } finally {
           setIsSaving(s => ({ ...s, [empId]: false }));
         }
       };
-      
+
       const updateQuota = async (id, updatedFields) => {
         try {
           const db = firebase.firestore();
@@ -334,260 +317,459 @@
           setMessage({ text: "Gagal memperbarui kuota cuti. Coba lagi.", type: "error" });
         }
       };
-
+      
       const deleteQuota = async (id) => {
         if (!confirm("Hapus jenis cuti ini?")) return;
         try {
-          const db = firebase.firestore();
-          await db.collection(`artifacts/${appId}/public/data/leaveQuotas`).doc(id).delete();
-          setMessage({ text: "Jenis cuti berhasil dihapus.", type: "success" });
+            const db = firebase.firestore();
+            await db.collection(`artifacts/${appId}/public/data/leaveQuotas`).doc(id).delete();
+            setMessage({ text: "Jenis cuti berhasil dihapus.", type: "success" });
         } catch (error) {
-          console.error("Gagal menghapus kuota cuti:", error);
-          setMessage({ text: "Gagal menghapus kuota cuti. Coba lagi.", type: "error" });
+            console.error("Gagal menghapus kuota cuti:", error);
+            setMessage({ text: "Gagal menghapus kuota cuti. Coba lagi.", type: "error" });
         }
       };
-      
+
       const addEmployee = async (name) => {
         const nm = (name||'').trim();
         if (!nm) return;
         const db = firebase.firestore();
         try {
-          await db.collection(`artifacts/${appId}/public/data/employees`).add({ name: nm, leaves: { annual:0, long:0, sick:0, maternity:0, important:0, outside:0 } });
-          setMessage({ text: "Pegawai berhasil ditambahkan.", type: "success" });
+          await db.collection(`artifacts/${appId}/public/data/employees`).add({
+            name: nm,
+            leaves: { annual:0, long:0, sick:0, maternity:0, important:0, outside:0 }
+          });
+          setMessage({ text: "Pegawai ditambahkan.", type: "success" });
         } catch (error) {
           console.error("Gagal menambahkan pegawai:", error);
           setMessage({ text: "Gagal menambahkan pegawai. Coba lagi.", type: "error" });
         }
       };
 
-      // Komponen untuk tampilan utama (user)
-      const renderDashboard = () => (
-        <div className="bg-white rounded-3xl shadow-2xl p-6 md:p-10 space-y-6">
-          <div className="text-center">
-            <img src="https://placehold.co/150x150/f87171/ffffff?text=RRI+Logo" alt="RRI Logo" className="mx-auto w-24 h-24 rounded-full mb-4 shadow-md" />
-            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-2">Selamat Datang, Karyawan</h1>
-            <p className="text-lg text-gray-600">Aplikasi Cuti RRI Sibolga</p>
-          </div>
+      const deleteEmployee = async (emp) => {
+        if (!confirm(`Hapus pegawai: ${emp.name}?`)) return;
+        const db = firebase.firestore();
+        try {
+          await db.collection(`artifacts/${appId}/public/data/employees`).doc(emp.id).delete();
+          setMessage({ text: "Pegawai dihapus.", type: "success" });
+        } catch (error) {
+          console.error("Gagal menghapus pegawai:", error);
+          setMessage({ text: "Gagal menghapus pegawai. Coba lagi.", type: "error" });
+        }
+      };
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button
-              onClick={() => setShowForm(true)}
-              className="flex items-center justify-center w-full px-6 py-4 bg-blue-600 text-white font-bold rounded-2xl text-lg hover:bg-blue-700 transition duration-300 shadow-md transform hover:scale-105 btn-focus"
-            >
-              <i data-lucide="file-plus-2" className="w-6 h-6 mr-2"></i> Ajukan Cuti
-            </button>
-            <button
-              onClick={() => setShowFlow(true)}
-              className="flex items-center justify-center w-full px-6 py-4 bg-gray-500 text-white font-bold rounded-2xl text-lg hover:bg-gray-600 transition duration-300 shadow-md transform hover:scale-105 btn-focus"
-            >
-              <i data-lucide="clock" className="w-6 h-6 mr-2"></i> Lihat Alur Cuti
-            </button>
-            <button
-              onClick={() => setShowCalendar(true)}
-              className="col-span-1 md:col-span-2 flex items-center justify-center w-full px-6 py-4 bg-teal-500 text-white font-bold rounded-2xl text-lg hover:bg-teal-600 transition duration-300 shadow-md transform hover:scale-105 btn-focus"
-            >
-              <i data-lucide="calendar-days" className="w-6 h-6 mr-2"></i> Lihat Kalender
-            </button>
-          </div>
+      const updateName = async (empId, newName) => {
+        const nm = (newName||'').trim();
+        if (!nm) return;
+        const db = firebase.firestore();
+        try {
+          await db.collection(`artifacts/${appId}/public/data/employees`).doc(empId).set({ name: nm }, { merge: true });
+          setMessage({ text: "Nama diperbarui.", type: "success" });
+        } catch (error) {
+          console.error("Gagal memperbarui nama:", error);
+          setMessage({ text: "Gagal memperbarui nama. Coba lagi.", type: "error" });
+        }
+      };
 
-          <div className="bg-gray-50 rounded-2xl shadow-xl p-6 mt-6 border-t-8 border-yellow-500">
-            <h3 className="text-xl font-bold text-gray-800 text-center mb-4">Jenis & Kuota Cuti</h3>
-            {leaveQuotas.length > 0 ? (
-              leaveQuotas.map((item, idx) => (
-                <div key={item.id || idx} className="flex flex-col md:flex-row md:items-center justify-between p-4 my-2 bg-white rounded-lg shadow-sm">
-                  <div className="font-semibold text-gray-700">{item.type}</div>
-                  <div className="text-gray-500 mt-2 md:mt-0">
-                    <span className="font-bold text-lg text-gray-900">{item.quota}</span>
-                    {item.note && <span className="text-xs italic text-red-500 ml-2 block md:inline">{item.note}</span>}
-                    {item.adminNote && (
-                      <div className="text-xs italic text-gray-500 mt-1 md:mt-0 md:ml-4">
-                        Catatan Admin: {item.adminNote}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-center text-gray-500 italic">Tidak ada data kuota cuti.</p>
-            )}
-          </div>
-          {/* Tombol untuk masuk admin */}
-          <div className="text-center mt-6">
-            <button onClick={toggleAdmin} className="text-sm text-gray-500 hover:text-gray-700 transition">
-              {isAdmin ? 'Keluar dari Admin' : 'Masuk sebagai Admin'}
-            </button>
-          </div>
+      // UI
+      if (isLoading) return (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-xl font-semibold text-gray-700 animate-pulse">Memuat data…</div>
         </div>
       );
-
-      // Komponen untuk panel admin
-      const renderAdminDashboard = () => (
-        <div className="bg-white rounded-3xl shadow-2xl p-6 md:p-10 space-y-6">
-          <div className="flex items-center justify-between mb-4">
-            <button onClick={toggleAdmin} className="text-gray-500 hover:text-gray-700 transition">
-              <i data-lucide="chevron-left" className="w-6 h-6"></i>
-            </button>
-            <h2 className="text-2xl font-bold text-gray-900 flex-grow text-center">Panel Admin</h2>
-            <div className="w-6 h-6"></div>
-          </div>
-          {message.text && (
-            <div className={`p-4 rounded-lg text-sm text-center font-medium ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-              {message.text}
-            </div>
-          )}
-          <div className="bg-gray-50 rounded-2xl shadow-inner p-6 space-y-4">
-            <h3 className="text-xl font-bold text-gray-800 mb-2 text-center">Manajemen Kuota Cuti</h3>
-            {leaveQuotas.length > 0 ? (
-              leaveQuotas.map((item, idx) => (
-                <div key={item.id || idx} className="bg-white p-4 rounded-lg shadow-sm space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="font-semibold text-gray-700">{item.type}</div>
-                    <div className="text-gray-500">{item.quota}</div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-600 block mb-1">Catatan Admin</label>
-                    <input
-                      type="text"
-                      value={editData[item.id]?.adminNote || item.adminNote || ''}
-                      onChange={(e) => setEditData({ ...editData, [item.id]: { ...editData[item.id], adminNote: e.target.value } })}
-                      className="w-full p-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Tambahkan catatan..."
-                    />
-                  </div>
-                  <button
-                    onClick={() => updateQuota(item.id, { adminNote: editData[item.id]?.adminNote })}
-                    className="w-full mt-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
-                  >
-                    Simpan Catatan
-                  </button>
-                </div>
-              ))
-            ) : (
-              <p className="text-center text-gray-500 italic">Tidak ada data kuota untuk dikelola.</p>
-            )}
-          </div>
-        </div>
-      );
-
-      // Komponen untuk input password
-      const renderPasswordInput = () => (
-        <div className="bg-white rounded-3xl shadow-2xl p-6 md:p-10 space-y-6 text-center">
-          <h2 className="text-2xl font-bold text-gray-900">Masuk sebagai Admin</h2>
-          <p className="text-gray-600">Masukkan kata sandi admin.</p>
-          <form onSubmit={submitPassword} className="space-y-4">
-            <input
-              type="password"
-              value={adminPassword}
-              onChange={(e) => setAdminPassword(e.target.value)}
-              className="w-full p-3 border rounded-lg text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Kata Sandi Admin"
-              autoFocus
-            />
-            {message.text && (
-              <div className={`p-2 rounded-lg text-sm font-medium ${message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                {message.text}
-              </div>
-            )}
-            <button
-              type="submit"
-              className="w-full px-6 py-3 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition shadow-md"
-            >
-              Masuk
-            </button>
-          </form>
-          <button onClick={() => setShowPasswordInput(false)} className="text-sm text-gray-500 hover:text-gray-700 transition mt-4">
-            Batal
-          </button>
-        </div>
-      );
-
-      const renderLeaveForm = () => (
-        <div className="bg-white rounded-3xl shadow-2xl p-6 md:p-10 space-y-6">
-          <div className="flex items-center justify-between mb-4">
-            <button onClick={() => setShowForm(false)} className="text-gray-500 hover:text-gray-700 transition">
-              <i data-lucide="chevron-left" className="w-6 h-6"></i>
-            </button>
-            <h2 className="text-2xl font-bold text-gray-900 flex-grow text-center">Formulir Cuti</h2>
-            <div className="w-6 h-6"></div>
-          </div>
-          <p className="text-gray-600 text-center">Isi formulir ini untuk mengajukan permohonan cuti.</p>
-          <div className="space-y-4">
-            <input type="text" placeholder="Jenis Cuti" className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <input type="date" placeholder="Tanggal Mulai" className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            <input type="date" placeholder="Tanggal Selesai" className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-500" />
-            <textarea placeholder="Alasan Cuti" rows="4" className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-          </div>
-          <button onClick={() => setShowConfirmation(true)} className="w-full px-6 py-3 bg-green-600 text-white font-bold rounded-2xl hover:bg-green-700 transition shadow-md">
-            Kirim Permohonan
-          </button>
-        </div>
-      );
-      
-      const renderFlow = () => (
-        <div className="bg-white rounded-3xl shadow-2xl p-6 md:p-10 space-y-6">
-          <div className="flex items-center justify-between mb-4">
-            <button onClick={() => setShowFlow(false)} className="text-gray-500 hover:text-gray-700 transition">
-              <i data-lucide="chevron-left" className="w-6 h-6"></i>
-            </button>
-            <h2 className="text-2xl font-bold text-gray-900 flex-grow text-center">Alur Pengajuan Cuti</h2>
-            <div className="w-6 h-6"></div>
-          </div>
-          <p className="text-gray-600 text-center">Diagram alir proses pengajuan dan persetujuan cuti.</p>
-          <div className="bg-gray-100 p-4 rounded-lg border-2 border-dashed border-gray-300 text-center text-gray-500 h-64 flex items-center justify-center">
-            [Placeholder Diagram Alir]
-          </div>
-        </div>
-      );
-
-      const renderConfirmationModal = () => (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
-          <div className="bg-white p-8 rounded-lg shadow-xl max-w-sm w-full text-center">
-            <div className="flex justify-center mb-4">
-              <div className="bg-green-100 p-3 rounded-full">
-                <i data-lucide="check-circle" className="w-10 h-10 text-green-600"></i>
-              </div>
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Sukses!</h3>
-            <p className="text-gray-600 mb-4">Permohonan cuti Anda berhasil diajukan.</p>
-            <button onClick={() => setShowConfirmation(false) || setShowForm(false)} className="w-full px-4 py-2 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 transition">
-              OK
-            </button>
-          </div>
-        </div>
-      );
-
-      if (isLoading) {
-        return <div className="text-center text-gray-500">Memuat aplikasi...</div>;
-      }
-      
-      let content;
-      if (showPasswordInput) {
-        content = renderPasswordInput();
-      } else if (isAdmin) {
-        content = renderAdminDashboard();
-      } else if (showForm) {
-        content = renderLeaveForm();
-      } else if (showCalendar) {
-        content = <Calendar onClose={() => setShowCalendar(false)} />;
-      } else if (showFlow) {
-        content = renderFlow();
-      } else {
-        content = renderDashboard();
-      }
 
       return (
-        <React.Fragment>
+        <div className="max-w-7xl mx-auto p-4">
           <Header currentTime={currentTime} />
-          {content}
-          {showConfirmation && renderConfirmationModal()}
-        </React.Fragment>
+
+          {message.text && (
+            <div className={`p-4 mb-4 text-white rounded-lg shadow-md flex items-center justify-between ${message.type==='success'?'bg-green-500':'bg-red-500'}`}>
+              <span>{message.text}</span>
+              <button onClick={() => setMessage({text:'',type:''})} className="ml-4 p-1 rounded-full hover:bg-white/20">
+                <i data-lucide="x" className="w-5 h-5"></i>
+              </button>
+            </div>
+          )}
+
+          <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+            <div className="flex items-center gap-2 bg-gray-100 p-3 rounded-xl text-gray-600 text-sm">
+              <span className="font-semibold">User ID:</span> <span className="font-mono">{userId}</span>
+            </div>
+            <div className="flex flex-col items-end gap-2">
+              <button onClick={toggleAdmin} className={`px-6 py-2 rounded-full font-bold text-white shadow-lg ${isAdmin?'bg-red-500 hover:bg-red-600':'bg-indigo-500 hover:bg-indigo-600'}`}>
+                {isAdmin ? 'Beralih ke User' : 'Beralih ke Admin'}
+              </button>
+              {showPasswordInput && (
+                <form onSubmit={submitPassword} className="flex gap-2">
+                  <input type="password" value={adminPassword} onChange={e=>setAdminPassword(e.target.value)} placeholder="Kata sandi admin"
+                      className="p-2 border-2 border-gray-300 rounded-full focus:border-indigo-500 focus:outline-none" />
+                  <button type="submit" className="px-4 py-2 bg-green-500 text-white rounded-full font-semibold hover:bg-green-600">Masuk</button>
+                </form>
+              )}
+            </div>
+          </div>
+
+          {isAdmin ? (
+            <AdminPanel employees={employees} leaveTypes={leaveTypes} leaveQuotas={leaveQuotas} editData={editData} setEditData={setEditData}
+                        saveLeaves={saveLeaves} updateQuota={updateQuota} deleteQuota={deleteQuota}
+                        addEmployee={addEmployee} deleteEmployee={deleteEmployee} updateName={updateName} isSaving={isSaving} setMessage={setMessage} />
+          ) : (
+            <UserPanel employees={employees} selectedEmployee={selectedEmployee} setSelectedEmployee={setSelectedEmployee}
+                        leaveTypes={leaveTypes} leaveQuotas={leaveQuotas} searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+                        showFlow={showFlow} setShowFlow={setShowFlow} showCalendar={showCalendar} setShowCalendar={setShowCalendar} />
+          )}
+        </div>
       );
     }
-    
-    const container = document.getElementById('root');
-    const root = createRoot(container);
-    root.render(<App />);
 
+    function AdminPanel({ employees, leaveTypes, leaveQuotas, editData, setEditData, saveLeaves, addEmployee, deleteEmployee, updateName, isSaving, updateQuota, deleteQuota, setMessage }) {
+      const [newName, setNewName] = useState('');
+      const [editing, setEditing] = useState(null);
+      const [editingName, setEditingName] = useState('');
+
+      const [newQuotaType, setNewQuotaType] = useState('');
+      const [newQuotaValue, setNewQuotaValue] = useState('');
+      const [isAddingQuota, setIsAddingQuota] = useState(false);
+      
+      const [editingQuotaId, setEditingQuotaId] = useState(null);
+      const [editingQuotaValue, setEditingQuotaValue] = useState('');
+      const [savingQuotaId, setSavingQuotaId] = useState(null);
+
+      useEffect(() => { lucide.createIcons(); });
+      
+      // Menggunakan try/catch langsung di sini untuk penanganan error yang lebih baik
+      const handleAddQuota = async (e) => {
+        e.preventDefault();
+        if (newQuotaType && newQuotaValue) {
+          setIsAddingQuota(true);
+          const db = firebase.firestore();
+          const ref = db.collection(`artifacts/${appId}/public/data/leaveQuotas`);
+          try {
+            const newOrder = leaveQuotas.length > 0 ? Math.max(...leaveQuotas.map(q => q.order || 0)) + 1 : 1;
+            await ref.add({
+              type: newQuotaType,
+              quota: newQuotaValue,
+              order: newOrder,
+            });
+            setMessage({ text: "Kuota cuti baru berhasil ditambahkan.", type: "success" });
+            setNewQuotaType('');
+            setNewQuotaValue('');
+          } catch (error) {
+            console.error("Gagal menambahkan kuota cuti:", error);
+            setMessage({ text: "Gagal menambahkan kuota cuti. Coba lagi.", type: "error" });
+          } finally {
+            setIsAddingQuota(false);
+          }
+        }
+      };
+
+      // Memulai proses edit kuota
+      const handleEditQuotaClick = (quota) => {
+        setEditingQuotaId(quota.id);
+        setEditingQuotaValue(quota.quota);
+      };
+
+      // Membatalkan proses edit
+      const handleCancelEditQuotaClick = () => {
+        setEditingQuotaId(null);
+        setEditingQuotaValue('');
+      };
+      
+      // Menyimpan perubahan kuota ke Firestore
+      const handleSaveQuotaClick = async (quotaId) => {
+        setSavingQuotaId(quotaId);
+        await updateQuota(quotaId, { quota: editingQuotaValue });
+        setSavingQuotaId(null);
+        setEditingQuotaId(null);
+        setEditingQuotaValue('');
+      };
+      
+      const handleQuotaDelete = async (id) => {
+          await deleteQuota(id);
+      };
+
+      return (
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl shadow-xl p-6 space-y-4 border-t-8 border-green-500">
+            <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+              <i data-lucide="user-plus" className="w-6 h-6"></i> Tambah Pegawai Baru
+            </h2>
+            <form onSubmit={(e)=>{e.preventDefault(); addEmployee(newName); setNewName('');}} className="flex flex-col md:flex-row gap-3">
+              <input value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Nama Lengkap Pegawai…"
+                      className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-green-500 focus:ring focus:ring-green-200 focus:outline-none" />
+              <button type="submit" className="px-6 py-3 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 shadow">Tambah</button>
+            </form>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-xl p-6 space-y-4 border-t-8 border-yellow-500">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <i data-lucide="calendar" className="w-6 h-6"></i> Kelola Kuota Cuti
+              </h2>
+            </div>
+            
+            <form onSubmit={handleAddQuota} className="bg-gray-100 p-4 rounded-xl flex flex-col md:flex-row gap-3 items-end">
+              <div className="flex-1">
+                <label htmlFor="newQuotaType" className="block text-sm font-semibold text-gray-700 mb-1">Jenis Cuti Baru</label>
+                <input id="newQuotaType" type="text" value={newQuotaType} onChange={e => setNewQuotaType(e.target.value)} placeholder="Misal: Cuti Lainnya"
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:border-yellow-500 focus:outline-none" />
+              </div>
+              <div className="flex-1">
+                <label htmlFor="newQuotaValue" className="block text-sm font-semibold text-gray-700 mb-1">Kuota</label>
+                <input id="newQuotaValue" type="text" value={newQuotaValue} onChange={e => setNewQuotaValue(e.target.value)} placeholder="Misal: 5 hari"
+                  className="w-full p-2 border border-gray-300 rounded-lg focus:border-yellow-500 focus:outline-none" />
+              </div>
+              <button type="submit" disabled={isAddingQuota} className={`px-6 py-2 rounded-lg font-bold shadow w-full md:w-auto ${isAddingQuota ? 'bg-gray-400' : 'bg-green-500 text-white hover:bg-green-600'}`}>
+                {isAddingQuota ? 'Menambah...' : 'Tambah'}
+              </button>
+            </form>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+              {leaveQuotas.map(quota => (
+                <div key={quota.id} className="flex flex-col p-3 bg-gray-100 rounded-lg shadow-sm">
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="text-sm font-semibold text-gray-600">{quota.type}</label>
+                    <button onClick={() => handleQuotaDelete(quota.id)} disabled={savingQuotaId === quota.id} className={`p-1 rounded-full text-red-500 ${savingQuotaId === quota.id ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-100'}`}>
+                       <i data-lucide="trash-2" className="w-4 h-4"></i>
+                    </button>
+                  </div>
+                  {editingQuotaId === quota.id ? (
+                    <div className="flex gap-2">
+                        <input type="text"
+                           value={editingQuotaValue}
+                           onChange={e => setEditingQuotaValue(e.target.value)}
+                           className="w-full p-2 border border-gray-300 rounded-lg focus:border-yellow-500 focus:outline-none"
+                        />
+                        <button onClick={() => handleSaveQuotaClick(quota.id)} disabled={savingQuotaId === quota.id} className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                          {savingQuotaId === quota.id ? <i data-lucide="loader-2" className="w-4 h-4 animate-spin"></i> : <i data-lucide="check" className="w-4 h-4"></i>}
+                        </button>
+                        <button onClick={handleCancelEditQuotaClick} className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                           <i data-lucide="x" className="w-4 h-4"></i>
+                        </button>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between items-center">
+                        <span className="text-gray-800 font-bold">{quota.quota}</span>
+                        <button onClick={() => handleEditQuotaClick(quota)} className="p-1 rounded-full text-indigo-500 hover:bg-indigo-100">
+                           <i data-lucide="pencil" className="w-4 h-4"></i>
+                        </button>
+                    </div>
+                  )}
+                  {quota.note && <p className="text-xs italic text-red-500 mt-1">{quota.note}</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {employees.map(emp => (
+              <div key={emp.id} className="bg-white rounded-2xl shadow-xl p-6 space-y-4 border-t-8 border-indigo-400">
+                {editing === emp.id ? (
+                  <div className="flex items-center gap-2">
+                    <input value={editingName} onChange={e=>setEditingName(e.target.value)}
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none" />
+                    <button onClick={()=>{updateName(emp.id, editingName); setEditing(null); setEditingName('');}} className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                      <i data-lucide="check" className="w-4 h-4"></i>
+                    </button>
+                    <button onClick={()=>{setEditing(null); setEditingName('');}} className="p-2 bg-red-500 text-white rounded-lg hover:bg-red-600">
+                      <i data-lucide="x" className="w-4 h-4"></i>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex justify-between items-center">
+                    <h2 className="text-lg font-bold text-gray-800">{emp.name}</h2>
+                    <button onClick={()=>{setEditing(emp.id); setEditingName(emp.name);}} className="p-1 rounded-full text-indigo-500 hover:bg-indigo-100">
+                      <i data-lucide="pencil" className="w-4 h-4"></i>
+                    </button>
+                  </div>
+                )}
+                <div className="space-y-3 text-sm">
+                  {leaveTypes.map(t => (
+                    <div key={t.key} className="flex flex-col">
+                      <label className="text-gray-600 font-medium mb-1">{t.label}:</label>
+                      <input type="number"
+                        value={ (editData[emp.id] && editData[emp.id][t.key]) ?? emp.leaves[t.key] ?? 0 }
+                        onChange={e=>setEditData(prev=>({ ...prev, [emp.id]: { ...(prev[emp.id]||{}), [t.key]: Number(e.target.value) } }))}
+                        className="w-full p-2 border border-gray-300 rounded-lg focus:border-indigo-500 focus:outline-none"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <button onClick={()=>saveLeaves(emp.id)} className={`flex-1 px-4 py-2 text-white font-bold rounded-full shadow ${isSaving[emp.id]?'bg-gray-400':'bg-green-500 hover:bg-green-600'}`}>
+                    {isSaving[emp.id] ? 'Menyimpan…' : 'Simpan'}
+                  </button>
+                  <button onClick={()=>deleteEmployee(emp)} className="flex-1 px-4 py-2 bg-red-500 text-white font-bold rounded-full hover:bg-red-600 shadow">
+                    Hapus
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    function UserPanel({ employees, selectedEmployee, setSelectedEmployee, leaveTypes, leaveQuotas, searchQuery, setSearchQuery, showFlow, setShowFlow, showCalendar, setShowCalendar }) {
+      const [todayLeaves, setTodayLeaves] = useState([]);
+      useEffect(() => { lucide.createIcons(); });
+
+      useEffect(() => {
+        const fetchLeaveData = async () => {
+          const spreadsheetUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQg3iDe2R2fwIGjughldUclnZrOdkFRNVp0hXhWgHqakUXdqAlT-RyGNas8CO483ftqYuuu9IAGs0UZ/pub?gid=562275814&single=true&output=csv';
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          try {
+            const response = await fetch(spreadsheetUrl);
+            const text = await response.text();
+            const leaveData = parseCSV(text);
+            const currentLeaves = leaveData.filter(leave => {
+              const rawStartDate = leave['Tanggal Mulai Cuti']?.split(' ')[0];
+              const rawEndDate = leave['Tanggal Selesai Cuti']?.split(' ')[0];
+              
+              if (!rawStartDate || !rawEndDate) return false;
+
+              const startDateParts = rawStartDate.split('/');
+              const endDateParts = rawEndDate.split('/');
+              
+              if (startDateParts.length === 3 && endDateParts.length === 3) {
+                const startDate = new Date(startDateParts[2], startDateParts[1] - 1, startDateParts[0]);
+                const endDate = new Date(endDateParts[2], endDateParts[1] - 1, endDateParts[0]);
+                startDate.setHours(0, 0, 0, 0);
+                endDate.setHours(0, 0, 0, 0);
+                return today >= startDate && today <= endDate;
+              }
+              return false;
+            });
+            setTodayLeaves(currentLeaves);
+          } catch (error) {
+            console.error("Gagal mengambil data cuti hari ini:", error);
+          }
+        };
+
+        fetchLeaveData();
+      }, []);
+
+      const filtered = React.useMemo(
+        () => employees.filter(e => e.name.toLowerCase().includes((searchQuery||'').toLowerCase())),
+        [employees, searchQuery]
+      );
+
+      return (
+        <div className="flex flex-col items-center">
+          <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6 max-w-2xl w-full border-t-8 border-green-500">
+            {showFlow ? (
+              <div>
+                <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">Alur Pengajuan Cuti</h2>
+                <ol className="list-decimal list-inside space-y-4 text-gray-700 text-lg">
+                  {["Lihat informasi cuti anda","Tentukan Jenis cuti dan Tanggal","Unduh berkas Persyaratan","Ajukan Cuti baru","Verifikasi oleh admin","Pemberitahuan oleh admin","Selamat cuti"].map((s,i)=>(
+                    <li key={i} className="p-3 bg-gray-50 rounded-lg shadow-sm transition hover:bg-indigo-50 hover:text-indigo-800">{s}</li>
+                  ))}
+                </ol>
+                <button onClick={()=>setShowFlow(false)} className="mt-8 w-full flex items-center justify-center px-6 py-3 bg-red-500 text-white font-bold rounded-full text-lg hover:bg-red-600 shadow">
+                  <i data-lucide="x" className="w-5 h-5 mr-2"></i> Tutup
+                </button>
+              </div>
+            ) : showCalendar ? (
+              <Calendar onClose={()=>setShowCalendar(false)} />
+            ) : (
+              <div>
+                <h2 className="text-3xl font-bold text-center text-gray-800">Selamat Datang di Aplikasi Cuti!</h2>
+                <div className="relative mt-6">
+                  <input
+                    type="text"
+                    placeholder="Cari nama Anda di sini…"
+                    value={searchQuery}
+                    onChange={e=>setSearchQuery(e.target.value)}
+                    className="w-full p-3 pl-10 border-2 border-gray-300 rounded-full focus:border-indigo-500 focus:ring focus:ring-indigo-200 outline-none"
+                  />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    <i data-lucide="search" className="w-5 h-5"></i>
+                  </span>
+                </div>
+
+                {searchQuery && filtered.length>0 && (
+                  <div className="bg-gray-100 p-4 rounded-xl max-h-64 overflow-y-auto mt-4">
+                    <p className="text-gray-600 mb-2 font-semibold">Pilih nama Anda:</p>
+                    <div className="space-y-2">
+                      {filtered.map(emp => (
+                        <button key={emp.id} onClick={()=>setSelectedEmployee(emp)}
+                                 className={`w-full text-left p-3 rounded-lg transition ${selectedEmployee?.id===emp.id?'bg-indigo-200 text-indigo-800 ring-2 ring-indigo-500':'bg-white hover:bg-gray-200 text-gray-800'}`}>
+                          {emp.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                <div className="bg-yellow-50 p-6 rounded-xl text-gray-700 mt-6 border-l-4 border-yellow-500">
+                  <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+                    <i data-lucide="calendar" className="w-6 h-6 text-yellow-600"></i> Pegawai Cuti Hari Ini
+                  </h3>
+                  {todayLeaves.length > 0 ? (
+                    <ul className="list-disc list-inside space-y-2">
+                      {todayLeaves.map((leave, index) => (
+                        <li key={index} className="text-gray-800">
+                          <span className="font-bold">{leave['Nama Pegawai']}</span>:
+                          <span className="ml-2 text-gray-600">{leave['Jenis Cuti']}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500 italic">Tidak ada pegawai yang sedang cuti hari ini. 🎉</p>
+                  )}
+                </div>
+
+                <div className="bg-green-50 p-6 rounded-xl text-gray-700 mt-6">
+                  <h3 className="text-xl font-semibold mb-4 border-b pb-2 border-green-200">
+                    Informasi Cuti untuk {selectedEmployee?.name || "Nama Tidak Ditemukan"}
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {leaveTypes.map(t => (
+                      <div key={t.key} className="flex justify-between items-center bg-white p-3 rounded-lg shadow-sm">
+                        <span className="font-medium">{t.label}:</span>
+                        <span className="text-2xl font-bold text-green-600">{selectedEmployee?.leaves?.[t.key] || 0}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col md:flex-row gap-4 mt-6 w-full">
+                  <a href="https://drive.google.com/drive/folders/1Cgl3yOpeZgsBxZZv5YvGtwZ8to9FM3ZE?usp=sharing" target="_blank" rel="noopener" className="w-full flex items-center justify-center px-6 py-3 bg-yellow-500 text-white font-bold rounded-full text-lg hover:bg-yellow-600 shadow">
+                    <i data-lucide="folder-kanban" className="w-5 h-5 mr-2"></i> Unduh Persyaratan
+                  </a>
+                  <a href="https://docs.google.com/forms/d/e/1FAIpQLSfh0_-PQxHlgN8MPIGwVN0YBfwO9EMQxQ92cEAb818g5DloZg/viewform?usp=sharing&ouid=105802488582507153521" target="_blank" rel="noopener" className="w-full flex items-center justify-center px-6 py-3 bg-indigo-500 text-white font-bold rounded-full text-lg hover:bg-indigo-600 shadow">
+                    <i data-lucide="pencil" className="w-5 h-5 mr-2"></i> Ajukan Cuti Baru
+                  </a>
+                </div>
+
+                <button onClick={()=>setShowFlow(true)} className="mt-6 w-full flex items-center justify-center px-6 py-3 bg-gray-500 text-white font-bold rounded-full text-lg hover:bg-gray-600 shadow">
+                  <i data-lucide="clock" className="w-5 h-5 mr-2"></i> Lihat Alur Cuti
+                </button>
+
+                <button onClick={()=>setShowCalendar(true)} className="mt-4 w-full flex items-center justify-center px-6 py-3 bg-teal-500 text-white font-bold rounded-full text-lg hover:bg-teal-600 shadow">
+                  <i data-lucide="calendar-days" className="w-5 h-5 mr-2"></i> Lihat Kalender
+                </button>
+
+                <div className="bg-gray-50 rounded-2xl shadow-xl p-6 mt-6 space-y-3 border-t-8 border-yellow-500">
+                  <h3 className="text-xl font-bold text-gray-800 text-center mb-2">Jenis & Kuota Cuti</h3>
+                  {leaveQuotas.map((it,idx)=>(
+                    <div key={it.id || idx} className="flex flex-col md:flex-row md:items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+                      <div className="font-semibold text-gray-700">{it.type}</div>
+                      <div className="text-gray-500">{it.quota} {it.note && <span className="text-xs italic text-red-500 ml-2 block md:inline-block">({it.note})</span>}</div>
+                    </div>
+                  ))}
+                </div>
+
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.render(<App />, document.getElementById('root'));
   </script>
 </body>
 </html>
