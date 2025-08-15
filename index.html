@@ -216,51 +216,37 @@
         return () => stop();
       }, []);
 
-      // Logic perbaikan duplikasi untuk Pegawai
-      useEffect(() => {
+      // ** PERBAIKAN: Logika sinkronisasi yang lebih robust **
+      // Menggunakan getDocs() untuk memastikan data yang ada diambil sepenuhnya sebelum menambahkan yang baru.
+      const syncInitialEmployees = async () => {
         const db = firebase.firestore();
         const ref = db.collection(`artifacts/${appId}/public/data/employees`);
-
-        const ensureNoDuplicates = async () => {
-          try {
-            const snap = await ref.get();
-            const existingNames = new Set(snap.docs.map(doc => doc.data().name));
-            
-            const newEmployees = initialEmployees.filter(name => !existingNames.has(name));
-            
-            if (newEmployees.length > 0) {
-              const batch = db.batch();
-              newEmployees.forEach(name => {
-                const docRef = ref.doc();
-                batch.set(docRef, {
-                  name,
-                  leaves: { annual:{count:0, note:''}, long:{count:0, note:''}, sick:{count:0, note:''}, maternity:{count:0, note:''}, important:{count:0, note:''}, outside:{count:0, note:''} }
-                });
+        try {
+          const snapshot = await ref.get();
+          const existingNames = new Set(snapshot.docs.map(doc => doc.data().name));
+          
+          const newEmployees = initialEmployees.filter(name => !existingNames.has(name));
+          
+          if (newEmployees.length > 0) {
+            const batch = db.batch();
+            newEmployees.forEach(name => {
+              const docRef = ref.doc();
+              batch.set(docRef, {
+                name,
+                leaves: { annual:{count:0, note:''}, long:{count:0, note:''}, sick:{count:0, note:''}, maternity:{count:0, note:''}, important:{count:0, note:''}, outside:{count:0, note:''} }
               });
-              await batch.commit();
-              setMessage({ text: "Data pegawai awal telah disinkronkan dan tidak ada duplikasi.", type: "success" });
-            }
-          } catch (error) {
-            console.error("Gagal sinkronisasi data pegawai:", error);
-            setMessage({ text: "Gagal sinkronisasi data pegawai.", type: "error" });
+            });
+            await batch.commit();
+            console.log("Data pegawai awal disinkronkan. Tidak ada duplikasi.");
+            setMessage({ text: "Data pegawai awal telah disinkronkan dan tidak ada duplikasi.", type: "success" });
           }
-        };
+        } catch (error) {
+          console.error("Gagal sinkronisasi data pegawai:", error);
+          setMessage({ text: "Gagal sinkronisasi data pegawai. Silakan muat ulang halaman.", type: "error" });
+        }
+      };
 
-        ensureNoDuplicates();
-
-        const unsub = ref.onSnapshot(snap => {
-          const arr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-          setEmployees(arr);
-          if (!selectedEmployee && arr.length) setSelectedEmployee(arr[0]);
-        }, err => {
-          console.error(err);
-          setMessage({ text: "Gagal memuat data cuti.", type: "error" });
-        });
-        return () => unsub();
-      }, [selectedEmployee]);
-
-      // Logic perbaikan duplikasi untuk Kuota Cuti
-      useEffect(() => {
+      const syncInitialQuotas = async () => {
         const db = firebase.firestore();
         const ref = db.collection(`artifacts/${appId}/public/data/leaveQuotas`);
         const initialQuotas = [
@@ -272,40 +258,60 @@
           { type: 'Cuti Diluar Tanggungan Negara', quota: '3 tahun', order: 6 },
           { type: 'Cuti Bersama', quota: '7 hari', note: 'sewaktu-waktu dapat berubah', order: 7 },
         ];
-
-        const ensureNoDuplicates = async () => {
-          try {
-            const snap = await ref.get();
-            const existingTypes = new Set(snap.docs.map(doc => doc.data().type));
-            
-            const newQuotas = initialQuotas.filter(quota => !existingTypes.has(quota.type));
-            
-            if (newQuotas.length > 0) {
-              const batch = db.batch();
-              newQuotas.forEach(q => {
-                const docRef = ref.doc();
-                batch.set(docRef, q);
-              });
-              await batch.commit();
-              setMessage({ text: "Data kuota cuti awal telah disinkronkan dan tidak ada duplikasi.", type: "success" });
-            }
-          } catch (error) {
-            console.error("Gagal sinkronisasi kuota cuti:", error);
-            setMessage({ text: "Gagal sinkronisasi kuota cuti.", type: "error" });
+        
+        try {
+          const snapshot = await ref.get();
+          const existingTypes = new Set(snapshot.docs.map(doc => doc.data().type));
+          
+          const newQuotas = initialQuotas.filter(quota => !existingTypes.has(quota.type));
+          
+          if (newQuotas.length > 0) {
+            const batch = db.batch();
+            newQuotas.forEach(q => {
+              const docRef = ref.doc();
+              batch.set(docRef, q);
+            });
+            await batch.commit();
+            console.log("Data kuota cuti awal disinkronkan. Tidak ada duplikasi.");
+            setMessage({ text: "Data kuota cuti awal telah disinkronkan dan tidak ada duplikasi.", type: "success" });
           }
-        };
+        } catch (error) {
+          console.error("Gagal sinkronisasi kuota cuti:", error);
+          setMessage({ text: "Gagal sinkronisasi kuota cuti. Silakan muat ulang halaman.", type: "error" });
+        }
+      };
 
-        ensureNoDuplicates();
+      useEffect(() => {
+        if (userId) {
+          syncInitialEmployees();
+          syncInitialQuotas();
 
-        const unsub = ref.orderBy('order').onSnapshot(snap => {
-          const arr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-          setLeaveQuotas(arr);
-        }, err => {
-          console.error(err);
-          setMessage({ text: "Gagal memuat kuota cuti.", type: "error" });
-        });
-        return () => unsub();
-      }, []);
+          // Menyiapkan listener real-time untuk pegawai
+          const db = firebase.firestore();
+          const unsubEmployees = db.collection(`artifacts/${appId}/public/data/employees`).onSnapshot(snap => {
+            const arr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setEmployees(arr);
+            if (!selectedEmployee && arr.length) setSelectedEmployee(arr[0]);
+          }, err => {
+            console.error(err);
+            setMessage({ text: "Gagal memuat data cuti.", type: "error" });
+          });
+
+          // Menyiapkan listener real-time untuk kuota cuti
+          const unsubQuotas = db.collection(`artifacts/${appId}/public/data/leaveQuotas`).orderBy('order').onSnapshot(snap => {
+            const arr = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+            setLeaveQuotas(arr);
+          }, err => {
+            console.error(err);
+            setMessage({ text: "Gagal memuat kuota cuti.", type: "error" });
+          });
+
+          return () => {
+            unsubEmployees();
+            unsubQuotas();
+          };
+        }
+      }, [userId]);
       
       const filtered = React.useMemo(
         () => employees.filter(e => e.name.toLowerCase().includes((searchQuery||'').toLowerCase())),
