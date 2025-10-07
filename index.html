@@ -1319,6 +1319,54 @@
             return dayDiff;
         }
 
+        // Check if text contains URL or link
+        function isLinkOrUrl(text) {
+            if (!text) return false;
+            
+            const lowerText = text.toLowerCase();
+            
+            // Check for common URL patterns
+            const urlPatterns = [
+                /https?:\/\//i,
+                /www\./i,
+                /\.com/i,
+                /\.co\.id/i,
+                /\.org/i,
+                /\.net/i,
+                /drive\.google/i,
+                /docs\.google/i,
+                /forms\.gle/i
+            ];
+            
+            // Check for link-related keywords
+            const linkKeywords = [
+                'link',
+                'url',
+                'drive',
+                'google drive',
+                'google docs',
+                'google form',
+                'dropbox',
+                'onedrive'
+            ];
+            
+            // Test URL patterns
+            for (let pattern of urlPatterns) {
+                if (pattern.test(text)) {
+                    return true;
+                }
+            }
+            
+            // Test link keywords
+            for (let keyword of linkKeywords) {
+                if (lowerText.includes(keyword)) {
+                    return true;
+                }
+            }
+            
+            return false;
+        }
+
         // Show today's leave modal
         function showTodayLeaveModal() {
             document.getElementById('todayLeaveModal').classList.remove('hidden');
@@ -1394,7 +1442,7 @@
                                             <span class="w-20 font-medium">Selesai:</span>
                                             <span>${leave.tanggalSelesai}</span>
                                         </div>
-                                        ${leave.keterangan ? `
+                                        ${leave.keterangan && !isLinkOrUrl(leave.keterangan) ? `
                                             <div class="flex items-start">
                                                 <span class="w-20 font-medium">Keterangan:</span>
                                                 <span class="flex-1">${leave.keterangan}</span>
@@ -2641,5 +2689,5 @@
             init();
         });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98aae296a4fc5ffa',t:'MTc1OTgxMzc1My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98ab60228652f894',t:'MTc1OTgxODg5Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
