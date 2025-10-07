@@ -33,20 +33,106 @@
         body {
             box-sizing: border-box;
         }
+        
+        /* Enhanced Animations */
         .fade-in {
-            animation: fadeIn 0.3s ease-in;
+            animation: fadeIn 0.5s ease-out;
         }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(20px) scale(0.95); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
+        
         .slide-down {
-            animation: slideDown 0.3s ease-out;
+            animation: slideDown 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(-30px) scale(0.9); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
         }
+        
+        .bounce-in {
+            animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        @keyframes bounceIn {
+            0% { opacity: 0; transform: scale(0.3) rotate(-10deg); }
+            50% { opacity: 1; transform: scale(1.05) rotate(2deg); }
+            70% { transform: scale(0.9) rotate(-1deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+        
+        .pulse-glow {
+            animation: pulseGlow 2s ease-in-out infinite alternate;
+        }
+        @keyframes pulseGlow {
+            from { box-shadow: 0 0 20px rgba(59, 130, 246, 0.3); }
+            to { box-shadow: 0 0 30px rgba(59, 130, 246, 0.6), 0 0 40px rgba(59, 130, 246, 0.2); }
+        }
+        
+        /* Floating Animation */
+        .float {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        /* Gradient Text */
+        .gradient-text {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        /* Glass Morphism Effect */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+        }
+        
+        /* Neon Glow Effect */
+        .neon-border {
+            border: 2px solid;
+            border-image: linear-gradient(45deg, #ff006e, #8338ec, #3a86ff) 1;
+            box-shadow: 0 0 20px rgba(255, 0, 110, 0.3);
+        }
+        
+        /* Card Hover Effects */
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Button Ripple Effect */
+        .btn-ripple {
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-ripple::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transition: width 0.6s, height 0.6s;
+            transform: translate(-50%, -50%);
+        }
+        .btn-ripple:active::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        /* Loading Animation */
         .loading {
             display: inline-block;
             width: 20px;
@@ -59,6 +145,111 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+        
+        /* Particle Background */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(59, 130, 246, 0.3);
+            border-radius: 50%;
+            animation: particleFloat 15s infinite linear;
+        }
+        
+        @keyframes particleFloat {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100px) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        /* Statistics Counter Animation */
+        .counter {
+            font-variant-numeric: tabular-nums;
+        }
+        
+        /* Progress Bar */
+        .progress-bar {
+            height: 4px;
+            background: linear-gradient(90deg, #ff006e, #8338ec, #3a86ff);
+            border-radius: 2px;
+            animation: progressGlow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes progressGlow {
+            from { box-shadow: 0 0 5px rgba(255, 0, 110, 0.5); }
+            to { box-shadow: 0 0 20px rgba(255, 0, 110, 0.8); }
+        }
+        
+        /* Tooltip */
+        .tooltip {
+            position: relative;
+        }
+        .tooltip::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 1000;
+        }
+        .tooltip:hover::after {
+            opacity: 1;
+        }
+        
+        /* Responsive Grid Animation */
+        .grid-item {
+            animation: gridSlideIn 0.6s ease-out forwards;
+            opacity: 0;
+        }
+        
+        @keyframes gridSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        
+        /* Dark Mode Support */
+        @media (prefers-color-scheme: dark) {
+            .glass-card {
+                background: rgba(0, 0, 0, 0.25);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+            }
         }
         
         /* Crop handles styling */
@@ -83,7 +274,17 @@
         .crop-handle[data-handle="e"] { top: 50%; right: -6px; transform: translateY(-50%); cursor: e-resize; }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+<body class="bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-100 min-h-screen relative overflow-x-hidden">
+    <!-- Animated Particle Background -->
+    <div class="particles" id="particles"></div>
+    
+    <!-- Floating Geometric Shapes -->
+    <div class="fixed inset-0 pointer-events-none z-0">
+        <div class="absolute top-20 left-10 w-20 h-20 bg-blue-200 rounded-full opacity-20 float" style="animation-delay: 0s;"></div>
+        <div class="absolute top-40 right-20 w-16 h-16 bg-purple-200 rounded-lg opacity-20 float" style="animation-delay: 1s;"></div>
+        <div class="absolute bottom-40 left-20 w-12 h-12 bg-pink-200 rounded-full opacity-20 float" style="animation-delay: 2s;"></div>
+        <div class="absolute bottom-20 right-40 w-24 h-24 bg-indigo-200 rounded-lg opacity-20 float" style="animation-delay: 0.5s;"></div>
+    </div>
     <!-- Loading Indicator -->
     <div id="loadingIndicator" class="fixed top-4 right-4 bg-white rounded-lg shadow-lg p-3 z-50 hidden">
         <div class="flex items-center space-x-2">
@@ -93,30 +294,28 @@
     </div>
 
     <!-- Header -->
-    <header class="bg-white shadow-lg border-b-4 border-red-600">
-        <div class="container mx-auto px-6 py-4">
+    <header class="bg-white/90 backdrop-blur-md shadow-2xl border-b-4 border-gradient-to-r from-red-500 to-pink-500 relative z-10">
+        <div class="absolute inset-0 bg-gradient-to-r from-red-500/5 to-pink-500/5"></div>
+        <div class="container mx-auto px-6 py-4 relative">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-4">
-                    <div class="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center">
-                        <span class="text-white font-bold text-lg">RRI</span>
+                    <div class="w-14 h-14 bg-gradient-to-br from-red-500 to-pink-600 rounded-full flex items-center justify-center shadow-lg pulse-glow">
+                        <span class="text-white text-2xl animate-pulse">📻</span>
                     </div>
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-800">Procuti RRI Sibolga</h1>
-                        <p class="text-sm text-gray-600">Sistem Pengelolaan Cuti Pegawai</p>
+                        <h1 class="text-3xl font-bold gradient-text">Procuti RRI Sibolga</h1>
+                        <div class="progress-bar w-32 mt-1"></div>
                     </div>
                 </div>
                 <div class="flex items-center space-x-4">
-                    <div id="connectionStatus" class="px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-                        🟢 Terhubung
-                    </div>
-                    <div id="modeIndicator" class="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                    <div id="modeIndicator" class="px-4 py-2 rounded-full text-sm font-medium bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 shadow-md border border-blue-200 tooltip" data-tooltip="Status login saat ini">
                         Mode: Pengguna
                     </div>
-                    <button id="loginBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
-                        Login Admin
+                    <button id="loginBtn" class="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl btn-ripple transform hover:scale-105">
+                        🔐 Login Admin
                     </button>
-                    <button id="logoutBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors hidden">
-                        Logout
+                    <button id="logoutBtn" class="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-300 shadow-lg hover:shadow-xl btn-ripple transform hover:scale-105 hidden">
+                        🚪 Logout
                     </button>
                 </div>
             </div>
@@ -128,42 +327,48 @@
         <!-- Statistics Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <!-- Total Pegawai -->
-            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-600">
-                <div class="flex items-center justify-between">
+            <div class="glass-card rounded-2xl shadow-2xl p-6 border-l-4 border-blue-500 card-hover bounce-in relative overflow-hidden" style="animation-delay: 0.1s;">
+                <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-400/20 to-blue-600/20 rounded-full -mr-10 -mt-10"></div>
+                <div class="flex items-center justify-between relative z-10">
                     <div>
-                        <h3 class="text-lg font-semibold text-gray-800">Total Pegawai</h3>
-                        <p class="text-3xl font-bold text-blue-600" id="totalEmployees">0</p>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Total Pegawai</h3>
+                        <p class="text-4xl font-bold bg-gradient-to-r from-blue-500 to-blue-700 bg-clip-text text-transparent counter" id="totalEmployees">0</p>
+                        <div class="w-16 h-1 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full mt-2"></div>
                     </div>
-                    <div class="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                        <span class="text-blue-600 text-xl">👥</span>
+                    <div class="w-16 h-16 bg-gradient-to-br from-blue-400 to-blue-600 rounded-2xl flex items-center justify-center shadow-lg float">
+                        <span class="text-white text-2xl">👥</span>
                     </div>
                 </div>
             </div>
 
             <!-- Jenis Cuti Terbanyak -->
-            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-green-600">
-                <div class="flex items-center justify-between">
+            <div class="glass-card rounded-2xl shadow-2xl p-6 border-l-4 border-green-500 card-hover bounce-in relative overflow-hidden" style="animation-delay: 0.2s;">
+                <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-green-400/20 to-green-600/20 rounded-full -mr-10 -mt-10"></div>
+                <div class="flex items-center justify-between relative z-10">
                     <div>
-                        <h3 class="text-lg font-semibold text-gray-800">Jenis Cuti Terbanyak</h3>
-                        <p class="text-xl font-bold text-green-600" id="mostUsedLeaveType">-</p>
-                        <p class="text-sm text-gray-600" id="mostUsedLeaveCount">0 hari</p>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Jenis Cuti Terbanyak</h3>
+                        <p class="text-xl font-bold bg-gradient-to-r from-green-500 to-green-700 bg-clip-text text-transparent" id="mostUsedLeaveType">-</p>
+                        <p class="text-sm text-gray-600 counter" id="mostUsedLeaveCount">0 hari</p>
+                        <div class="w-16 h-1 bg-gradient-to-r from-green-400 to-green-600 rounded-full mt-2"></div>
                     </div>
-                    <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                        <span class="text-green-600 text-xl">📊</span>
+                    <div class="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-2xl flex items-center justify-center shadow-lg float" style="animation-delay: 0.5s;">
+                        <span class="text-white text-2xl">📊</span>
                     </div>
                 </div>
             </div>
 
             <!-- Total Cuti Keseluruhan -->
-            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-600">
-                <div class="flex items-center justify-between">
+            <div class="glass-card rounded-2xl shadow-2xl p-6 border-l-4 border-red-500 card-hover bounce-in relative overflow-hidden" style="animation-delay: 0.3s;">
+                <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-red-400/20 to-red-600/20 rounded-full -mr-10 -mt-10"></div>
+                <div class="flex items-center justify-between relative z-10">
                     <div>
-                        <h3 class="text-lg font-semibold text-gray-800">Total Cuti Keseluruhan</h3>
-                        <p class="text-3xl font-bold text-red-600" id="totalAllLeaves">0</p>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-2">Total Cuti Keseluruhan</h3>
+                        <p class="text-4xl font-bold bg-gradient-to-r from-red-500 to-red-700 bg-clip-text text-transparent counter" id="totalAllLeaves">0</p>
                         <p class="text-sm text-gray-600">hari</p>
+                        <div class="w-16 h-1 bg-gradient-to-r from-red-400 to-red-600 rounded-full mt-2"></div>
                     </div>
-                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
-                        <span class="text-red-600 text-xl">📅</span>
+                    <div class="w-16 h-16 bg-gradient-to-br from-red-400 to-red-600 rounded-2xl flex items-center justify-center shadow-lg float" style="animation-delay: 1s;">
+                        <span class="text-white text-2xl">📅</span>
                     </div>
                 </div>
             </div>
@@ -172,39 +377,88 @@
         <!-- Quick Actions -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <!-- User Actions -->
-            <div class="bg-white rounded-xl shadow-lg p-6 border-l-4 border-blue-600">
-                <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                    <span class="mr-2">📋</span>
-                    Layanan Cuti
-                </h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <button onclick="ajukanCuti()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2">
-                        <span>📝</span>
-                        <span>Ajukan Cuti</span>
-                    </button>
-                    <button onclick="unduhBerkas()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2">
-                        <span>📄</span>
-                        <span>Unduh Berkas</span>
-                    </button>
+            <div class="glass-card rounded-2xl shadow-2xl p-8 border-l-4 border-blue-500 card-hover bounce-in relative overflow-hidden" style="animation-delay: 0.4s;">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-400/10 to-blue-600/10 rounded-full -mr-16 -mt-16"></div>
+                <div class="relative z-10">
+                    <h2 class="text-2xl font-bold gradient-text mb-6 flex items-center">
+                        <span class="mr-3 text-3xl">📋</span>
+                        Layanan Cuti
+                    </h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                        <button onclick="ajukanCuti()" class="bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white px-6 py-4 rounded-xl font-medium transition-all duration-300 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl btn-ripple transform hover:scale-105 tooltip" data-tooltip="Buat permohonan cuti baru">
+                            <span class="text-xl">📝</span>
+                            <span>Ajukan Cuti</span>
+                        </button>
+                        <button onclick="unduhBerkas()" class="bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white px-6 py-4 rounded-xl font-medium transition-all duration-300 flex items-center justify-center space-x-3 shadow-lg hover:shadow-xl btn-ripple transform hover:scale-105 tooltip" data-tooltip="Download formulir dan dokumen">
+                            <span class="text-xl">📄</span>
+                            <span>Unduh Berkas</span>
+                        </button>
+                    </div>
+                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-100">
+                        <p class="text-sm text-gray-700 leading-relaxed">
+                            💡 <strong>Tips:</strong> Ajukan permohonan cuti atau unduh formulir persyaratan yang diperlukan dengan mudah
+                        </p>
+                    </div>
                 </div>
-                <p class="text-sm text-gray-600 mt-3">
-                    Ajukan permohonan cuti atau unduh formulir persyaratan yang diperlukan
-                </p>
             </div>
 
             <!-- Admin Controls -->
-            <div id="adminControls" class="hidden bg-white rounded-xl shadow-lg p-6 border-l-4 border-red-600">
-                <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center">
-                    <span class="mr-2">⚙️</span>
-                    Panel Admin
+            <div id="adminControls" class="hidden glass-card rounded-2xl shadow-2xl p-8 border-l-4 border-red-500 card-hover bounce-in relative overflow-hidden" style="animation-delay: 0.5s;">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-red-400/10 to-red-600/10 rounded-full -mr-16 -mt-16"></div>
+                <div class="relative z-10">
+                    <h2 class="text-2xl font-bold gradient-text mb-6 flex items-center">
+                        <span class="mr-3 text-3xl">⚙️</span>
+                        Panel Admin
+                    </h2>
+                    <button id="addEmployeeBtn" class="bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white px-6 py-4 rounded-xl font-medium transition-all duration-300 flex items-center justify-center space-x-3 w-full shadow-lg hover:shadow-xl btn-ripple transform hover:scale-105 tooltip" data-tooltip="Tambah pegawai baru ke sistem">
+                        <span class="text-xl">👤</span>
+                        <span>Tambah Pegawai</span>
+                    </button>
+                    <div class="bg-gradient-to-r from-red-50 to-pink-50 rounded-xl p-4 border border-red-100 mt-4">
+                        <p class="text-sm text-gray-700 leading-relaxed">
+                            🔐 <strong>Admin Mode:</strong> Kelola data pegawai dan informasi cuti dalam sistem
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Section -->
+        <div class="glass-card rounded-2xl shadow-2xl p-6 mb-8 border-l-4 border-purple-500 card-hover bounce-in relative overflow-hidden" style="animation-delay: 0.6s;">
+            <div class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-purple-400/10 to-indigo-400/10 rounded-full -mr-16 -mt-16"></div>
+            <div class="relative z-10">
+                <h2 class="text-2xl font-bold gradient-text mb-6 flex items-center">
+                    <span class="mr-3 text-3xl">🔍</span>
+                    Cari Pegawai
                 </h2>
-                <button id="addEmployeeBtn" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 w-full">
-                    <span>👤</span>
-                    <span>Tambah Pegawai</span>
-                </button>
-                <p class="text-sm text-gray-600 mt-3">
-                    Kelola data pegawai dan informasi cuti dalam sistem
-                </p>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="flex-1 relative">
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            placeholder="Ketik nama pegawai, NIP, atau jabatan..." 
+                            class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-300 bg-white/80 backdrop-blur-sm"
+                        >
+                        <div class="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400">
+                            <span class="text-lg">🔍</span>
+                        </div>
+                    </div>
+                    <button 
+                        id="clearSearch" 
+                        class="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-300 shadow-lg hover:shadow-xl btn-ripple transform hover:scale-105 tooltip hidden" 
+                        data-tooltip="Hapus pencarian dan tampilkan semua"
+                    >
+                        ❌ Bersihkan
+                    </button>
+                </div>
+                <div id="searchResults" class="mt-4 text-sm text-gray-600 hidden">
+                    <span id="searchResultText"></span>
+                </div>
+                <div class="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl p-4 border border-purple-100 mt-4">
+                    <p class="text-sm text-gray-700 leading-relaxed">
+                        💡 <strong>Tips:</strong> Anda dapat mencari berdasarkan nama lengkap, sebagian nama, NIP, atau jabatan pegawai
+                    </p>
+                </div>
             </div>
         </div>
 
@@ -651,7 +905,9 @@
         let isAdminMode = false;
         let currentEmployeeId = null;
         let employees = [];
+        let filteredEmployees = [];
         let unsubscribeEmployees = null;
+        let searchQuery = '';
 
         // Firebase functions
         async function initializeFirebase() {
@@ -903,6 +1159,11 @@
             document.getElementById('photoInput').addEventListener('change', handlePhotoSelect);
             document.getElementById('cancelPhotoUpload').addEventListener('click', hidePhotoUploadModal);
             document.getElementById('savePhoto').addEventListener('click', handleSavePhoto);
+            
+            // Search functionality
+            document.getElementById('searchInput').addEventListener('input', handleSearch);
+            document.getElementById('clearSearch').addEventListener('click', clearSearch);
+            
             setupPhotoEditor();
         }
 
@@ -920,18 +1181,16 @@
                 
                 card.innerHTML = `
                     <div class="p-6">
-                        <div class="flex items-center space-x-4 mb-4">
-                            <div class="flex items-center justify-center border-4 border-white shadow-lg" style="width: 96px; height: 96px; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg, #3b82f6, #8b5cf6);">
+                        <div class="text-center mb-4">
+                            <div class="flex items-center justify-center border-4 border-white shadow-lg mx-auto mb-3" style="width: 96px; height: 96px; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg, #3b82f6, #8b5cf6);">
                                 ${employee.photo ? 
                                     `<img src="${employee.photo}" alt="${employee.name}" style="width: 100%; height: 100%; object-fit: cover; object-position: center; border-radius: 50%;">` :
                                     `<span class="text-white font-bold text-2xl">${employee.name.split(' ').map(n => n[0]).join('').substring(0, 2)}</span>`
                                 }
                             </div>
-                            <div class="flex-1">
-                                <h3 class="font-bold text-gray-800 text-lg leading-tight">${employee.name}</h3>
-                                <p class="text-sm text-gray-600">${employee.position}</p>
-                                <p class="text-xs text-gray-500">NIP: ${employee.nip}</p>
-                            </div>
+                            <h3 class="font-bold text-gray-800 text-lg leading-tight mb-1">${employee.name}</h3>
+                            <p class="text-sm text-gray-600 mb-1">${employee.position}</p>
+                            <p class="text-xs text-gray-500">NIP: ${employee.nip}</p>
                         </div>
                         <div class="border-t pt-4">
                             <div class="flex justify-between items-center">
@@ -1814,8 +2073,230 @@
             }
         });
 
+        // Create animated particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 15;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 15 + 's';
+                particle.style.animationDuration = (Math.random() * 10 + 10) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Animate counter numbers
+        function animateCounter(element, target, duration = 2000) {
+            const start = parseInt(element.textContent) || 0;
+            const increment = (target - start) / (duration / 16);
+            let current = start;
+            
+            const timer = setInterval(() => {
+                current += increment;
+                if ((increment > 0 && current >= target) || (increment < 0 && current <= target)) {
+                    current = target;
+                    clearInterval(timer);
+                }
+                element.textContent = Math.floor(current);
+            }, 16);
+        }
+
+        // Enhanced update statistics with animations
+        function updateStatisticsAnimated() {
+            // Get current values
+            const currentTotal = parseInt(document.getElementById('totalEmployees').textContent) || 0;
+            const currentAllLeaves = parseInt(document.getElementById('totalAllLeaves').textContent) || 0;
+            
+            // Calculate new values
+            const newTotal = employees.length;
+            
+            const leaveTypes = {
+                'Cuti Tahunan': 0,
+                'Cuti Besar': 0,
+                'Cuti Alasan Penting': 0,
+                'Cuti Sakit': 0,
+                'Cuti Melahirkan': 0,
+                'Cuti Diluar Tanggungan Negara': 0
+            };
+
+            let totalAllLeaves = 0;
+
+            employees.forEach(employee => {
+                if (employee.cuti) {
+                    leaveTypes['Cuti Tahunan'] += employee.cuti.tahunan || 0;
+                    leaveTypes['Cuti Besar'] += employee.cuti.besar || 0;
+                    leaveTypes['Cuti Alasan Penting'] += employee.cuti.penting || 0;
+                    leaveTypes['Cuti Sakit'] += employee.cuti.sakit || 0;
+                    leaveTypes['Cuti Melahirkan'] += employee.cuti.melahirkan || 0;
+                    leaveTypes['Cuti Diluar Tanggungan Negara'] += employee.cuti.diluar || 0;
+
+                    totalAllLeaves += Object.values(employee.cuti).reduce((sum, val) => sum + (val || 0), 0);
+                }
+            });
+
+            // Find most used leave type
+            let mostUsedType = 'Tidak ada data';
+            let mostUsedCount = 0;
+
+            for (const [type, count] of Object.entries(leaveTypes)) {
+                if (count > mostUsedCount) {
+                    mostUsedCount = count;
+                    mostUsedType = type;
+                }
+            }
+
+            // Animate counters
+            if (currentTotal !== newTotal) {
+                animateCounter(document.getElementById('totalEmployees'), newTotal);
+            }
+            if (currentAllLeaves !== totalAllLeaves) {
+                animateCounter(document.getElementById('totalAllLeaves'), totalAllLeaves);
+            }
+            
+            // Update other elements
+            document.getElementById('mostUsedLeaveType').textContent = mostUsedType;
+            document.getElementById('mostUsedLeaveCount').textContent = `${mostUsedCount} hari`;
+        }
+
+        // Override the original updateStatistics function
+        function updateStatistics() {
+            updateStatisticsAnimated();
+        }
+
+        // Add staggered animation to employee cards
+        function renderEmployeesWithAnimation(employeeList = employees) {
+            const grid = document.getElementById('employeeGrid');
+            grid.innerHTML = '';
+
+            employeeList.forEach((employee, index) => {
+                const totalCuti = employee.cuti ? Object.values(employee.cuti).reduce((sum, val) => sum + (val || 0), 0) : 0;
+                
+                const card = document.createElement('div');
+                card.className = 'glass-card rounded-2xl shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer transform hover:-translate-y-2 hover:scale-105 grid-item card-hover relative overflow-hidden';
+                card.style.animationDelay = `${index * 0.1}s`;
+                card.onclick = () => showEmployeeDetail(employee.id);
+                
+                card.innerHTML = `
+                    <div class="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-purple-400/10 to-pink-400/10 rounded-full -mr-10 -mt-10"></div>
+                    <div class="p-6 relative z-10">
+                        <div class="text-center mb-6">
+                            <div class="flex items-center justify-center border-4 border-white shadow-2xl mx-auto mb-4 pulse-glow" style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden; background: linear-gradient(135deg, #667eea, #764ba2);">
+                                ${employee.photo ? 
+                                    `<img src="${employee.photo}" alt="${employee.name}" style="width: 100%; height: 100%; object-fit: cover; object-position: center; border-radius: 50%;">` :
+                                    `<span class="text-white font-bold text-2xl">${employee.name.split(' ').map(n => n[0]).join('').substring(0, 2)}</span>`
+                                }
+                            </div>
+                            <h3 class="font-bold text-gray-800 text-xl leading-tight mb-2 gradient-text">${employee.name}</h3>
+                            <p class="text-sm text-gray-600 mb-1 font-medium">${employee.position}</p>
+                            <p class="text-xs text-gray-500 bg-gray-100 rounded-full px-3 py-1 inline-block">NIP: ${employee.nip}</p>
+                        </div>
+                        <div class="bg-gradient-to-r from-red-50 to-pink-50 rounded-xl p-4 border border-red-100">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm text-gray-700 font-medium">Total Cuti Terpakai:</span>
+                                <span class="text-3xl font-bold bg-gradient-to-r from-red-500 to-pink-600 bg-clip-text text-transparent counter">${totalCuti}</span>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <p class="text-xs text-gray-600">hari</p>
+                                <div class="w-16 h-1 bg-gradient-to-r from-red-400 to-pink-500 rounded-full"></div>
+                            </div>
+                        </div>
+                        ${isAdminMode ? `
+                            <div class="mt-6 pt-4 border-t border-gray-200 space-y-3">
+                                <button onclick="event.stopPropagation(); editEmployee('${employee.id}')" 
+                                        class="w-full bg-gradient-to-r from-blue-100 to-indigo-100 hover:from-blue-200 hover:to-indigo-200 text-blue-700 py-3 px-4 rounded-xl text-sm font-medium transition-all duration-300 btn-ripple transform hover:scale-105 tooltip" data-tooltip="Edit informasi pegawai">
+                                    ✏️ Edit Data
+                                </button>
+                                <button onclick="event.stopPropagation(); uploadPhoto('${employee.id}')" 
+                                        class="w-full bg-gradient-to-r from-green-100 to-emerald-100 hover:from-green-200 hover:to-emerald-200 text-green-700 py-3 px-4 rounded-xl text-sm font-medium transition-all duration-300 btn-ripple transform hover:scale-105 tooltip" data-tooltip="Upload atau edit foto">
+                                    📷 Upload Foto
+                                </button>
+                                <button onclick="event.stopPropagation(); deleteEmployee('${employee.id}')" 
+                                        class="w-full bg-gradient-to-r from-red-100 to-pink-100 hover:from-red-200 hover:to-pink-200 text-red-700 py-3 px-4 rounded-xl text-sm font-medium transition-all duration-300 btn-ripple transform hover:scale-105 tooltip" data-tooltip="Hapus pegawai dari sistem">
+                                    🗑️ Hapus Pegawai
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        // Search functionality
+        function handleSearch(e) {
+            searchQuery = e.target.value.toLowerCase().trim();
+            
+            if (searchQuery === '') {
+                clearSearch();
+                return;
+            }
+            
+            // Filter employees based on search query
+            filteredEmployees = employees.filter(employee => {
+                return employee.name.toLowerCase().includes(searchQuery) ||
+                       employee.nip.toLowerCase().includes(searchQuery) ||
+                       employee.position.toLowerCase().includes(searchQuery);
+            });
+            
+            // Show clear button
+            document.getElementById('clearSearch').classList.remove('hidden');
+            
+            // Update search results display
+            updateSearchResults();
+            
+            // Render filtered employees
+            renderEmployeesWithAnimation(filteredEmployees);
+        }
+        
+        function clearSearch() {
+            searchQuery = '';
+            filteredEmployees = [];
+            document.getElementById('searchInput').value = '';
+            document.getElementById('clearSearch').classList.add('hidden');
+            document.getElementById('searchResults').classList.add('hidden');
+            
+            // Render all employees
+            renderEmployeesWithAnimation(employees);
+        }
+        
+        function updateSearchResults() {
+            const searchResults = document.getElementById('searchResults');
+            const searchResultText = document.getElementById('searchResultText');
+            
+            if (filteredEmployees.length === 0) {
+                searchResultText.innerHTML = `
+                    <span class="text-red-600 font-medium">❌ Tidak ditemukan pegawai dengan kata kunci "${searchQuery}"</span>
+                    <br>
+                    <span class="text-gray-500 text-xs mt-1">Coba gunakan kata kunci lain atau periksa ejaan</span>
+                `;
+            } else if (filteredEmployees.length === 1) {
+                searchResultText.innerHTML = `
+                    <span class="text-green-600 font-medium">✅ Ditemukan 1 pegawai dengan kata kunci "${searchQuery}"</span>
+                `;
+            } else {
+                searchResultText.innerHTML = `
+                    <span class="text-blue-600 font-medium">📋 Ditemukan ${filteredEmployees.length} pegawai dengan kata kunci "${searchQuery}"</span>
+                `;
+            }
+            
+            searchResults.classList.remove('hidden');
+        }
+
+        // Override the original renderEmployees function
+        function renderEmployees() {
+            const employeesToRender = searchQuery ? filteredEmployees : employees;
+            renderEmployeesWithAnimation(employeesToRender);
+        }
+
         // Initialize the application when page loads
-        document.addEventListener('DOMContentLoaded', init);
+        document.addEventListener('DOMContentLoaded', () => {
+            createParticles();
+            init();
+        });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98aaab9e40dace73',t:'MTc1OTgxMTUwMi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98aace1066d95f32',t:'MTc1OTgxMjkxMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
